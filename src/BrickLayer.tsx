@@ -60,6 +60,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         // copy brick properties
         Object.assign(props, brickConfig);
+        
+        // add ID prop
+        props.key = brickConfig._id;
+
+        // remove children - as they are passed via React.createElement
         delete props['children']; // delete children object
 
         // check if we have children
