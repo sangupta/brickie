@@ -1,0 +1,25 @@
+{
+    "name": "brickie",
+    "description": "Just lay bricks",
+    "version": "0.0.1",
+    "main": "src/Brickie",
+    "scripts": {
+        "tsc": "tsc --noEmit"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/sangupta/brickie"
+    },
+    "author": {
+        "name": "Sandeep Gupta",
+        "email": "sangupta@adobe.com",
+        "url": "https://sangupta.com"
+    },
+    "devDependencies": {
+        "typescript": "^3.7.5",
+        "react": "^16.12.0",
+        "react-dom": "^16.12.0",
+        "@types/react": "^16.9.19",
+        "@types/react-dom": "^16.9.5"
+    }
+}
