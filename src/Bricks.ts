@@ -17,7 +17,7 @@ export default class Bricks {
             throw new Error('Cannot register an undefined/null brick. To remove use unregister() method.')
         }
 
-        name = name.toLowerCase().trim();
+        name = name.trim();
         Bricks.brickMappings[name] = brick;
     }
 
@@ -44,7 +44,7 @@ export default class Bricks {
             return null;
         }
 
-        name = name.toLowerCase().trim();
+        name = name.trim();
         return Bricks.brickMappings[name];
     }
 }
