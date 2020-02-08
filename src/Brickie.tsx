@@ -68,6 +68,10 @@ export default class Brickie {
         if (!json) {
             return;
         }
+        
+        if(typeof json !== 'object') {
+            return;
+        }
 
         if(Array.isArray(json)) {
             for(let index:number = 0; index < json.length; index++) {

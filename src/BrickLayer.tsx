@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Bricks from './Bricks';
+import BrickUtils from './BrickUtils';
 
 interface BrickLayerProps {
     /**
@@ -68,9 +69,15 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         delete props['children']; // delete children object
 
         // check if we have children
+        const childBricks = brickConfig.children;
         let children = null;
-        if (brickConfig.children) {
-            children = this.renderLayout(brickConfig.children);
+
+        if (childBricks) {
+            if(BrickUtils.isPrimitive(childBricks)) {
+                children = childBricks;
+            } else {
+                children = this.renderLayout(brickConfig.children);
+            }
         }
 
         // create the element
