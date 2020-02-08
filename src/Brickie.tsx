@@ -70,30 +70,19 @@ export default class Brickie {
         }
 
         if(Array.isArray(json)) {
-            const children = json;
-            for(let index:number = 0; index < children.length; index++) {
-                const child = children[index];
-                Brickie.addKeyField(child);
+            for(let index:number = 0; index < json.length; index++) {
+                const item = json[index];
+                Brickie.addKeyField(item);
             }
 
             return;
         }
 
-        if (!json._id) {
-            json._id = 'brickie-field-' + (++Brickie.idCounter);
+        if (!json.key) {
+            json.key = 'brickie-field-' + (++Brickie.idCounter);
         }
 
         if (json.children) {
-            if(Array.isArray(json.children)) {
-                const children = json.children;
-                for(let index:number = 0; index < children.length; index++) {
-                    const child = children[index];
-                    Brickie.addKeyField(child);
-                }
-
-                return;
-            }
-
             Brickie.addKeyField(json.children);
         }
     }
