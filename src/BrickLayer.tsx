@@ -27,6 +27,11 @@ interface BrickLayerProps {
 export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
     /**
+     * Handler cache to speed up re-rendering cycles
+     */
+    private handlerCache: Map<string, Function> = new Map();
+
+    /**
      * Render the UI.
      * 
      */
@@ -60,8 +65,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         return this.renderBrick(layout);
     }
 
-    getBrick(brickName:string) {
-        if(!brickName) {
+    getBrick(brickName: string) {
+        if (!brickName) {
             return null;
         }
 
@@ -75,7 +80,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      */
     renderBrick(brickConfig: any): any {
         let brickType = this.getBrick(brickConfig.brick);
-        
+
         if (!brickType) {
             console.log('no brick found for given name: ', brickConfig.brick);
             return null;
@@ -112,10 +117,6 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         return element;
     }
 
-    private handleAnyEvent(id, ...args): void {
-        console.log('Handling event: ', arguments);
-    }
-
     /**
      * we cannot just blindly copy all props
      * like Object.assign(props, brickConfig);
@@ -135,18 +136,66 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         }
 
         for (let index = 0; index < keys.length; index++) {
-            let key: string = keys[index];
+            const key: string = keys[index];
+            const value = brickConfig[key];
 
             if (!key.startsWith('on')) {
                 // copy this simple prop
-                props[key] = brickConfig[key];
+                props[key] = value;
                 continue;
             }
 
             // this needs to mount to our own handler
-            props[key] = (...args) => {
-                this.handleAnyEvent(key, ...args);
+            if (typeof value === 'string') {
+                const handler = this.getHandler(value);
+                if (handler) {
+                    props[key] = handler;
+                }
+            }
+
+            if (typeof value === 'function') {
+                props[key] = value;
             }
         }
+    }
+
+    /**
+     * Find the handler for the given string. This tries to
+     * find a `function` that can be called when any event
+     * inside any React component happens. The handlers are
+     * cached to speed up development as well as not to 
+     * remove/add listeners during re-rendering.
+     * 
+     * @param id 
+     */
+    private getHandler(id: string): Function {
+        const handler = this.props.callbackHandler;
+        if (!handler) {
+            return null;
+        }
+
+        let cached: Function = this.handlerCache.get(id);
+        if (cached) {
+            return cached;
+        }
+
+        if (typeof handler === 'function') {
+            cached = (...args) => {
+                handler(id, ...args);
+            }
+
+            this.handlerCache.set(id, cached);
+            return cached;
+        }
+
+        if (typeof handler === 'object') {
+            const candidate: any = handler[id];
+            if (typeof candidate === 'function') {
+                this.handlerCache.set(id, candidate);
+                return candidate;
+            }
+        }
+
+        return null;
     }
 }

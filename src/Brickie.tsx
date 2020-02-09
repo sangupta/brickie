@@ -26,6 +26,12 @@ export default class Brickie {
     private domElement: HTMLElement;
 
     /**
+     * Callback handler that is used to pass through events
+     * like click so that callee can take actions against them.
+     */
+    private callbackHandler?: Function | object;
+
+    /**
      * Layout a given UI json. This convenience method creates a
      * new instance of `Brickie` and lays out the UI, and then
      * return the generated instance.
@@ -33,8 +39,9 @@ export default class Brickie {
      * @param json 
      * @param mountElement 
      */
-    static lay(json: object, mountElement: HTMLElement): Brickie {
+    static lay(json: object, mountElement: HTMLElement, callbackHandler?: Function | object): Brickie {
         const brickie: Brickie = new Brickie();
+        brickie.callbackHandler = callbackHandler;
         brickie.lay(json, mountElement);
         return brickie;
     }
@@ -59,7 +66,8 @@ export default class Brickie {
         Brickie.addKeyField(json);
 
         this.domElement = mountElement;
-        this.reactElement = ReactDOM.render(<BrickLayer layout={json} />, mountElement);
+        this.reactElement = ReactDOM.render(<BrickLayer layout={json} 
+                                callbackHandler={this.callbackHandler} />, mountElement);
     }
 
     /**
