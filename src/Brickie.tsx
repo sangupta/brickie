@@ -93,6 +93,23 @@ export default class Brickie {
     }
 
     /**
+     * Register a lot of bricks from a `* as` import.
+     * 
+     * @param obj 
+     */
+    static registerBricks(obj: object): void {
+        if (!obj) {
+            return;
+        }
+
+        const keys = Object.keys(obj);
+        for (let index = 0; index < keys.length; index++) {
+            let key = keys[index];
+            Brickie.registerBrick(key, obj[key]);
+        }
+    }
+
+    /**
      * Unregister a previously registered brick by this name.
      * 
      * @param name 

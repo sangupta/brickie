@@ -25,7 +25,7 @@ To register a single component:
 ```js
 import Button from 'my-react-component-framework';
 
-Brickie.registerComponent('Button', Button);
+Brickie.registerBrick('Button', Button);
 ```
 
 If you would like to register components in bulk, you can use
@@ -34,7 +34,7 @@ the convenience method as:
 ```js
 import * as MyLib from 'my-react-component-framework';
 
-Brickie.registerComponents(MyLib);
+Brickie.registerBricks(MyLib);
 ```
 
 Currently, registering a component registers it will all
