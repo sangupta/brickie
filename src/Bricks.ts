@@ -34,17 +34,4 @@ export default class Bricks {
         Bricks.brickMappings = {};
     }
 
-    /**
-     * Return the brick for the given name.
-     * 
-     * @param name 
-     */
-    static getBrick(name: string): Function {
-        if(!name) {
-            return null;
-        }
-
-        name = name.trim();
-        return Bricks.brickMappings[name];
-    }
 }
