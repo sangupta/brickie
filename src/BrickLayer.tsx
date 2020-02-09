@@ -65,6 +65,15 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         return this.renderBrick(layout);
     }
 
+    /**
+     * Get brick component corresponding to the given name of the
+     * brick.
+     * 
+     * @param brickName the brick name to find the component for
+     * 
+     * @returns a React component for the given brick name, or `null`
+     * if no matching component is found
+     */
     getBrick(brickName: string) {
         if (!brickName) {
             return null;
@@ -129,32 +138,42 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * @param brickConfig 
      */
     private copyBrickProperties(props: any, brickConfig: any): void {
-        // 
+        // find all keys inside configuration
         const keys = Object.keys(brickConfig);
         if (!keys || keys.length === 0) {
+            // no prop is supplied, nothing to set
             return;
         }
 
+        // iterate over all props in config
         for (let index = 0; index < keys.length; index++) {
+            // read both prop and its value
             const key: string = keys[index];
             const value = brickConfig[key];
 
-            if (!key.startsWith('on')) {
-                // copy this simple prop
+            // is the value a function back in the JSON itself
+            // mount it directly, nothing to massage here
+            if (typeof value === 'function') {
                 props[key] = value;
                 continue;
             }
 
-            // this needs to mount to our own handler
-            if (typeof value === 'string') {
+            // does prop start with `on` - it must be a handler
+            if (!key.startsWith('on')) {
+                // no! so simply copy this simple prop
+                props[key] = value;
+                continue;
+            }
+
+            // yes, and thus it needs to mount to a handler function
+            // id for the function supplied?
+            if (value && typeof value === 'string') {
+                // get our cached handler
                 const handler = this.getHandler(value);
                 if (handler) {
                     props[key] = handler;
+                    continue;
                 }
-            }
-
-            if (typeof value === 'function') {
-                props[key] = value;
             }
         }
     }
@@ -174,28 +193,47 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             return null;
         }
 
+        // see if we have a cached handler or not?
         let cached: Function = this.handlerCache.get(id);
         if (cached) {
+            // we have a cached one, return it
             return cached;
         }
 
+        // we have nothing in cache
+        // see if supplied callbackHandler via `props` 
+        // is a function?
         if (typeof handler === 'function') {
+            // yes, is a function
+            // create an anonymous function to supply ID as the first arg
+            // and then spread all incoming ones after it
             cached = (...args) => {
                 handler(id, ...args);
             }
 
+            // add this to cache
             this.handlerCache.set(id, cached);
+
+            // return this new handler
             return cached;
         }
 
+        // is supplied callbackHandler an object?
         if (typeof handler === 'object') {
+            // yes, find a property inside this object
+            // by the given name
             const candidate: any = handler[id];
-            if (typeof candidate === 'function') {
+
+            // if property exists and is a function?
+            if (candidate && typeof candidate === 'function') {
+                // yes, use this function as handler
+                // also save it in cache
                 this.handlerCache.set(id, candidate);
                 return candidate;
             }
         }
 
+        // no valid handler found
         return null;
     }
 }
