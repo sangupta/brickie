@@ -3,6 +3,7 @@ import * as ReactDOM from 'react-dom';
 import BrickLayer from './BrickLayer';
 import Bricks from './Bricks';
 import BrickConfig from './BrickConfig';
+import { SPECIAL_BRICKS } from './Bricks';
 
 /**
  * The central class for Brickie framework.
@@ -182,6 +183,27 @@ export default class Brickie {
 
         if (json.children) {
             Brickie.addKeyField(json.children);
+        }
+
+        // check for specific child attributes of the brick
+        let brickConfig:BrickConfig = Bricks.brickMappings[json.brick];
+
+        if(!brickConfig) {
+            brickConfig = SPECIAL_BRICKS[json.brick];
+        }
+
+        if(!brickConfig) {
+            return;
+        }
+
+        if(brickConfig.childAttributes) {
+            for(let index = 0; index < brickConfig.childAttributes.length; index++) {
+                let attr:string = brickConfig.childAttributes[index];
+
+                if(json[attr]) {
+                    Brickie.addKeyField(json[attr]);
+                }
+            }
         }
     }
 
