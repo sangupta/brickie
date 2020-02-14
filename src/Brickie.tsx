@@ -26,23 +26,22 @@ export default class Brickie {
     private domElement: HTMLElement;
 
     /**
-     * Callback handler that is used to pass through events
-     * like click so that callee can take actions against them.
-     */
-    private callbackHandler?: Function | object;
-
-    /**
      * Layout a given UI json. This convenience method creates a
      * new instance of `Brickie` and lays out the UI, and then
      * return the generated instance.
      * 
      * @param json 
-     * @param mountElement 
+     * @param mountElement the `HTMLElement` to which the layout
+     * shall be rendered
+     * 
+     * @param state the initial state of the layout that needs to
+     * be rendered. To update the state in an already rendered
+     * layout, please use methods on the `Brickie` instance thus
+     * returned.
      */
-    static lay(json: object, mountElement: HTMLElement, callbackHandler?: Function | object): Brickie {
+    static lay(json: object, mountElement: HTMLElement, state?: object, callbackHandler?: Function | object): Brickie {
         const brickie: Brickie = new Brickie();
-        brickie.callbackHandler = callbackHandler;
-        brickie.lay(json, mountElement);
+        brickie.lay(json, mountElement, state, callbackHandler);
         return brickie;
     }
 
@@ -52,7 +51,7 @@ export default class Brickie {
      * @param json 
      * @param mountElement 
      */
-    lay(json: object, mountElement: HTMLElement): void {
+    lay(json: object, mountElement: HTMLElement, state?: object, callbackHandler?: Function | object): void {
         if (!json) {
             throw new Error('JSON layout to render is a must.');
         }
@@ -66,8 +65,13 @@ export default class Brickie {
         Brickie.addKeyField(json);
 
         this.domElement = mountElement;
-        this.reactElement = ReactDOM.render(<BrickLayer layout={json} 
-                                callbackHandler={this.callbackHandler} />, mountElement);
+
+        const brickLayer = <BrickLayer 
+                                layout={json}
+                                callbackHandler={callbackHandler} 
+                                state={state} />;
+        
+        this.reactElement = ReactDOM.render(brickLayer, mountElement);
     }
 
     /**
