@@ -3,7 +3,6 @@ import Bricks from './Bricks';
 import { SPECIAL_BRICKS } from './Bricks';
 
 import BrickUtils from './BrickUtils';
-import ForLoop from 'ForLoop';
 
 /**
  * Defines the `props` for `BrickLayer` 
