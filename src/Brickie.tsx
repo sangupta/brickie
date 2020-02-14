@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import BrickLayer from './BrickLayer';
 import Bricks from './Bricks';
+import BrickConfig from './BrickConfig';
 
 /**
  * The central class for Brickie framework.
@@ -66,11 +67,11 @@ export default class Brickie {
 
         this.domElement = mountElement;
 
-        const brickLayer = <BrickLayer 
-                                layout={json}
-                                callbackHandler={callbackHandler} 
-                                state={state} />;
-        
+        const brickLayer = <BrickLayer
+            layout={json}
+            callbackHandler={callbackHandler}
+            state={state} />;
+
         this.reactElement = ReactDOM.render(brickLayer, mountElement);
     }
 
@@ -100,8 +101,17 @@ export default class Brickie {
      * @param name 
      * @param component 
      */
-    static registerBrick(name: string, component: Function): void {
-        Bricks.registerBrick(name, component);
+    static registerBrick(name: string, component: Function, childAttributes?: string[]): void {
+        Bricks.registerBrick(name, new BrickConfig(component, childAttributes));
+    }
+
+    /**
+     * 
+     * @param name 
+     * @param brickConfig 
+     */
+    static registerBrickConfig(name: string, brickConfig: BrickConfig): void {
+        Bricks.registerBrick(name, brickConfig);
     }
 
     /**

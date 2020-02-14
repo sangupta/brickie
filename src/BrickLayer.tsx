@@ -3,6 +3,7 @@ import Bricks from './Bricks';
 import { SPECIAL_BRICKS } from './Bricks';
 
 import BrickUtils from './BrickUtils';
+import BrickConfig from 'BrickConfig';
 
 /**
  * Defines the `props` for `BrickLayer` 
@@ -82,7 +83,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * @returns a React component for the given brick name, or `null`
      * if no matching component is found
      */
-    getBrick(brickName: string) {
+    getBrick(brickName: string):BrickConfig {
         if (!brickName) {
             return null;
         }
@@ -105,10 +106,10 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
     /**
      * Render a single brick.
      * 
-     * @param brickConfig the brick definition to render
+     * @param brickJSON the brick definition to render
      */
-    renderBrick = (brickConfig: any): any => {
-        const brickName: string = brickConfig.brick;
+    renderBrick = (brickJSON: any): any => {
+        const brickName: string = brickJSON.brick;
         if (!brickName) {
             console.log('Brick name has not been specified');
             return null;
@@ -116,17 +117,17 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         // check for special cases of bricks
         const lowerBrickName: string = brickName.toLowerCase();
-        let brick = SPECIAL_BRICKS[lowerBrickName];
+        let brickConfig:BrickConfig = SPECIAL_BRICKS[lowerBrickName];
         let specialBrick: boolean = false;
-        if (brick) {
+        if (brickConfig) {
             specialBrick = true;
         } else {
             // this is a generic brick - handle it normally
-            brick = this.getBrick(brickName);
+            brickConfig = this.getBrick(brickName);
         }
 
-        if (!brick) {
-            console.log('No brick found for given name: ', brickConfig.brick);
+        if (!brickConfig) {
+            console.log('No brick found for given name: ', brickJSON.brick);
             return null;
         }
 
@@ -134,8 +135,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         const props: any = {};
 
         // copy brick properties.
-        this.copyBrickProperties(props, brickConfig);
-        props.key = brickConfig.key; // add ID prop
+        this.copyBrickProperties(props, brickJSON);
+        props.key = brickJSON.key; // add ID prop
 
         if (specialBrick) {
             props.renderKids = this.renderKids;
@@ -145,19 +146,19 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         delete props['children']; // delete children object
 
         // check if we have children
-        const childBricks = brickConfig.children;
+        const childBricks = brickJSON.children;
         let children = null;
 
         if (childBricks) {
             if (BrickUtils.isPrimitive(childBricks)) {
                 children = childBricks;
             } else {
-                children = this.renderLayout(brickConfig.children);
+                children = this.renderLayout(brickJSON.children);
             }
         }
 
         // create the element
-        let element = React.createElement(brick, props, children);
+        let element = React.createElement(brickConfig.brickCtor as any, props, children);
 
         // return it
         return element;
