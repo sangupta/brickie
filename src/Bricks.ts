@@ -2,7 +2,7 @@ import ForLoop from "./ForLoop";
 import IfClause from "./IfClause";
 
 export const SPECIAL_BRICKS = {
-    'for': ForLoop,
+    'foreach': ForLoop,
     'if': IfClause
 }
 
