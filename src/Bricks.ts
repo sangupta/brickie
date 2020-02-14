@@ -1,3 +1,11 @@
+import ForLoop from "./ForLoop";
+import IfClause from "./IfClause";
+
+export const SPECIAL_BRICKS = {
+    'for': ForLoop,
+    'if': IfClause
+}
+
 export default class Bricks {
 
     static brickMappings: any = {};
@@ -9,11 +17,11 @@ export default class Bricks {
      * @param brick 
      */
     static registerBrick(name: string, brick: Function): void {
-        if(!name) {
+        if (!name) {
             throw new Error('Cannot register a brick without a name');
         }
 
-        if(!brick) {
+        if (!brick) {
             throw new Error('Cannot register an undefined/null brick. To remove use unregister() method.')
         }
 

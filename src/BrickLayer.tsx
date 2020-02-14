@@ -1,12 +1,16 @@
 import * as React from 'react';
 import Bricks from './Bricks';
+import { SPECIAL_BRICKS } from './Bricks';
+
 import BrickUtils from './BrickUtils';
+import ForLoop from 'ForLoop';
 
 /**
  * Defines the `props` for `BrickLayer` 
  * component.
  */
 interface BrickLayerProps {
+
     /**
      * The JSON layout that is rendered
      */
@@ -17,6 +21,11 @@ interface BrickLayerProps {
      * pass event calls
      */
     callbackHandler?: Function | object;
+
+    /**
+     * State to be used to render
+     */
+    state?: object;
 
 }
 
@@ -49,7 +58,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * 
      * @param layout 
      */
-    renderLayout(layout: any): any {
+    renderLayout = (layout: any): any => {
         if (Array.isArray(layout)) {
             let result = [];
             for (let index = 0; index < layout.length; index++) {
@@ -83,15 +92,42 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
     }
 
     /**
+     * Render the internal `Brickie` components for components
+     * like `for` or `if`. These methods get access to this
+     * `Brickie` internal method to manipulate the UI.
+     *  
+     * @param brickConfig 
+     */
+    private renderKids = (kids: [], context: object = null): any => {
+        console.log('render kids');
+        return this.renderLayout(kids);
+    }
+
+    /**
      * Render a single brick.
      * 
      * @param brickConfig the brick definition to render
      */
-    renderBrick(brickConfig: any): any {
-        let brickType = this.getBrick(brickConfig.brick);
+    renderBrick = (brickConfig: any): any => {
+        const brickName: string = brickConfig.brick;
+        if (!brickName) {
+            console.log('Brick name has not been specified');
+            return null;
+        }
 
-        if (!brickType) {
-            console.log('no brick found for given name: ', brickConfig.brick);
+        // check for special cases of bricks
+        const lowerBrickName: string = brickName.toLowerCase();
+        let brick = SPECIAL_BRICKS[lowerBrickName];
+        let specialBrick: boolean = false;
+        if (brick) {
+            specialBrick = true;
+        } else {
+            // this is a generic brick - handle it normally
+            brick = this.getBrick(brickName);
+        }
+
+        if (!brick) {
+            console.log('No brick found for given name: ', brickConfig.brick);
             return null;
         }
 
@@ -100,9 +136,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         // copy brick properties.
         this.copyBrickProperties(props, brickConfig);
+        props.key = brickConfig.key; // add ID prop
 
-        // add ID prop
-        props.key = brickConfig.key;
+        if (specialBrick) {
+            props.renderKids = this.renderKids;
+        }
 
         // remove children - as they are passed via React.createElement
         delete props['children']; // delete children object
@@ -120,7 +158,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         }
 
         // create the element
-        let element = React.createElement(brickType, props, children);
+        let element = React.createElement(brick, props, children);
 
         // return it
         return element;
