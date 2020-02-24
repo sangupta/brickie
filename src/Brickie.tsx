@@ -4,6 +4,7 @@ import BrickLayer from './BrickLayer';
 import Bricks from './Bricks';
 import BrickConfig from './BrickConfig';
 import { SPECIAL_BRICKS } from './Bricks';
+import VarStore from 'varstore';
 
 /**
  * The central class for Brickie framework.
@@ -41,9 +42,9 @@ export default class Brickie {
      * layout, please use methods on the `Brickie` instance thus
      * returned.
      */
-    static lay(json: object, mountElement: HTMLElement, state?: object, callbackHandler?: Function | object): Brickie {
+    static lay(json: object, mountElement: HTMLElement, store: VarStore, callbackHandler?: Function | object): Brickie {
         const brickie: Brickie = new Brickie();
-        brickie.lay(json, mountElement, state, callbackHandler);
+        brickie.lay(json, mountElement, store, callbackHandler);
         return brickie;
     }
 
@@ -53,7 +54,7 @@ export default class Brickie {
      * @param json 
      * @param mountElement 
      */
-    lay(json: object, mountElement: HTMLElement, state?: object, callbackHandler?: Function | object): void {
+    lay(json: object, mountElement: HTMLElement, store?: VarStore, callbackHandler?: Function | object): void {
         if (!json) {
             throw new Error('JSON layout to render is a must.');
         }
@@ -71,7 +72,7 @@ export default class Brickie {
         const brickLayer = <BrickLayer
             layout={json}
             callbackHandler={callbackHandler}
-            state={state} />;
+            store={store} />;
 
         this.reactElement = ReactDOM.render(brickLayer, mountElement);
     }
@@ -186,21 +187,21 @@ export default class Brickie {
         }
 
         // check for specific child attributes of the brick
-        let brickConfig:BrickConfig = Bricks.brickMappings[json.brick];
+        let brickConfig: BrickConfig = Bricks.brickMappings[json.brick];
 
-        if(!brickConfig) {
+        if (!brickConfig) {
             brickConfig = SPECIAL_BRICKS[json.brick];
         }
 
-        if(!brickConfig) {
+        if (!brickConfig) {
             return;
         }
 
-        if(brickConfig.childAttributes) {
-            for(let index = 0; index < brickConfig.childAttributes.length; index++) {
-                let attr:string = brickConfig.childAttributes[index];
+        if (brickConfig.childAttributes) {
+            for (let index = 0; index < brickConfig.childAttributes.length; index++) {
+                let attr: string = brickConfig.childAttributes[index];
 
-                if(json[attr]) {
+                if (json[attr]) {
                     Brickie.addKeyField(json[attr]);
                 }
             }

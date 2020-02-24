@@ -5,6 +5,8 @@ import { SPECIAL_BRICKS } from './Bricks';
 import BrickUtils from './BrickUtils';
 import BrickConfig from 'BrickConfig';
 
+import VarStore from 'varstore';
+
 /**
  * Defines the `props` for `BrickLayer` 
  * component.
@@ -17,15 +19,15 @@ interface BrickLayerProps {
     layout: object;
 
     /**
+     * State to be used to render
+     */
+    store: VarStore;
+
+    /**
      * The callback handler that will be used to
      * pass event calls
      */
     callbackHandler?: Function | object;
-
-    /**
-     * State to be used to render
-     */
-    state?: object;
 
 }
 
@@ -39,6 +41,17 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * Handler cache to speed up re-rendering cycles
      */
     private handlerCache: Map<string, Function> = new Map();
+
+    /**
+     * Constructor
+     * 
+     * @param props 
+     * @param context 
+     */
+    constructor(props, context) {
+        super(props, context);
+        this.state = props.initialState;
+    }
 
     /**
      * Render the UI.
@@ -83,7 +96,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * @returns a React component for the given brick name, or `null`
      * if no matching component is found
      */
-    getBrick(brickName: string):BrickConfig {
+    getBrick(brickName: string): BrickConfig {
         if (!brickName) {
             return null;
         }
@@ -100,7 +113,16 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      */
     private renderKids = (kids: [], context: object = null): any => {
         console.log('render kids');
-        return this.renderLayout(kids);
+        if(context) {
+            this.props.store.pushContext(context);
+        }
+
+        const result = this.renderLayout(kids);
+        if(context) {
+            this.props.store.popContext();
+        }
+
+        return result;
     }
 
     /**
@@ -117,7 +139,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         // check for special cases of bricks
         const lowerBrickName: string = brickName.toLowerCase();
-        let brickConfig:BrickConfig = SPECIAL_BRICKS[lowerBrickName];
+        let brickConfig: BrickConfig = SPECIAL_BRICKS[lowerBrickName];
         let specialBrick: boolean = false;
         if (brickConfig) {
             specialBrick = true;
@@ -189,6 +211,10 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             const key: string = keys[index];
             const value = brickConfig[key];
 
+            if (key === 'brick') {
+                continue;
+            }
+
             // is the value a function back in the JSON itself
             // mount it directly, nothing to massage here
             if (typeof value === 'function') {
@@ -199,7 +225,16 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             // does prop start with `on` - it must be a handler
             if (!key.startsWith('on')) {
                 // no! so simply copy this simple prop
-                props[key] = value;
+                if (!key.startsWith('$')) {
+                    props[key] = value;
+                    continue;
+                }
+
+                // this is an expression, that needs to be
+                // evaluated
+                console.log('evaluate: ' + value);
+                let evaluated = this.props.store.evaluate(value);
+                props[key.substring(1)] = evaluated;
                 continue;
             }
 
