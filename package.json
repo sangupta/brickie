@@ -20,6 +20,7 @@
         "react": "^16.12.0",
         "react-dom": "^16.12.0",
         "@types/react": "^16.9.22",
-        "@types/react-dom": "^16.9.5"
+        "@types/react-dom": "^16.9.5",
+        "varstore": "file:/Users/sangupta/git/reborn/varstore"
     }
 }
