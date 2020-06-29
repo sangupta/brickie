@@ -101,3 +101,8 @@ arguments of event handler.
 ## License
 
 Apache License Version 2.0.
+
+## May be somewhat related project
+
+* https://engineering.instawork.com/when-xml-beats-json-ui-layouts-53c7f1d3fdb7?gi=6b0700e15e25
+* https://www.storyblok.com/tp/react-dynamic-component-from-json
