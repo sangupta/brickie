@@ -2,7 +2,7 @@
 
 Brickie is a JSON based layout renderer using React
 components.
-
+* [Example](#example)
 * [Brickie React Components](#brickie-react-components)
   * [Case Sensitivity](#case-sensitivity)
 * [Usage](#usage)
@@ -13,6 +13,33 @@ components.
 * [Inspiration](#inspiration)
 * [Author](#author)
 * [License](#license)
+
+## Example
+
+```js
+import Brickie from 'brickie';
+import * as MyComponents from 'my-react-component-library';
+import VarStore from 'varstore';
+
+Brickie.registerBricks(MyComponents);
+
+function callbackFunction() {
+    console.log('callback function called: ', arguments);
+}
+
+const callbackObject = {
+    mogambo : function() {
+        console.log('mogambo clicked: ', arguments);
+    }
+}
+
+const layout = [
+];
+
+const store:VarStore = new VarStore('test');
+
+Brickie.lay(layout, document.getElementById('root'), store, callbackObject);
+```
 
 ## Brickie and React Components
 
