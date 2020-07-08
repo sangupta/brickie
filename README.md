@@ -14,10 +14,10 @@ components.
 * [Author](#author)
 * [License](#license)
 
-## Brickie React Components
+## Brickie and React Components
 
 `Brickie` does not ship with any React component. It was developed
-with bring-your-own React component framework in mind. Thus, you
+with bring-your-own React components approach in mind. Thus, you
 need to register components before you can start using them.
 
 To register a single component:
