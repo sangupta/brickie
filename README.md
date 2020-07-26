@@ -2,7 +2,7 @@
 
 Brickie is a JSON based layout renderer using React
 components.
-
+* [Example](#example)
 * [Brickie React Components](#brickie-react-components)
   * [Case Sensitivity](#case-sensitivity)
 * [Usage](#usage)
@@ -14,10 +14,37 @@ components.
 * [Author](#author)
 * [License](#license)
 
-## Brickie React Components
+## Example
+
+```js
+import Brickie from 'brickie';
+import * as MyComponents from 'my-react-component-library';
+import VarStore from 'varstore';
+
+Brickie.registerBricks(MyComponents);
+
+function callbackFunction() {
+    console.log('callback function called: ', arguments);
+}
+
+const callbackObject = {
+    mogambo : function() {
+        console.log('mogambo clicked: ', arguments);
+    }
+}
+
+const layout = [
+];
+
+const store:VarStore = new VarStore('test');
+
+Brickie.lay(layout, document.getElementById('root'), store, callbackObject);
+```
+
+## Brickie and React Components
 
 `Brickie` does not ship with any React component. It was developed
-with bring-your-own React component framework in mind. Thus, you
+with bring-your-own React components approach in mind. Thus, you
 need to register components before you can start using them.
 
 To register a single component:
