@@ -50,7 +50,6 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      */
     constructor(props, context) {
         super(props, context);
-        this.state = props.initialState;
     }
 
     /**
