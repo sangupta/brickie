@@ -9,8 +9,28 @@ time registeration of `form` and `element` components.
 Register the base `form` element with `Brickie`.
 
 ```js
-// the 2nd argument is optional and the default value will be empty array
-Brickie.registerForm("CustomForm", [ "onSubmit" ]); 
+// register that component wired with name "CustomForm" is our base `form` component.
+// you can register more than one `form` level component. The name is the name used
+// when registering component and not necessarily the name of `function` or `class`.
+//
+// the below does not provide any extra support other than base Brickie support. When
+// an event is called (starting with `on`) it will be passed as other events to the
+// callback handler.
+
+Brickie.registerForm("CustomForm");
+Brickie.registerForm("CustomFormWithTouchSupprt");
+
+// However, Brickie provides support to aggregate form-data and pass it to the callback
+// direcrly, to liberate callee from aggregating using `varstore`.
+//
+// see example below for details
+
+Brickie.registerForm("CustomForm", "onSubmit"); 
+
+// Brickie can also trap into multiple form event methods to provide the same support.
+// In this case, you can pass a string array to register multiple method names
+
+Brickie.registerForm("CustomForm", [ "onSubmit", "onFormSubmit" ]); 
 ```
 
 The above will trap the `onSubmit` method in the `CustomForm`. It can be used with
