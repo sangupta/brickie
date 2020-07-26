@@ -45,6 +45,9 @@ this form will be provided to the callback method directly, so that they do not 
 to struggle with `varstore`.
 
 ```js
+// function based callback handler will receive the first argument as the name
+// of handler that was invoked
+
 function genericCallback(id, data) {
     switch(id) {
         case "formCallbackHandler":
@@ -57,6 +60,9 @@ function genericCallback(id, data) {
 ```
 
 ```js
+// class based callback handler. Brickie itself searches for a method in this class
+// that has the same name as provided in JSON, and calls it
+
 class MyCallbackInstance {
     function formCallbackHandler(formData) {
         
