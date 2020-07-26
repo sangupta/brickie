@@ -6,6 +6,7 @@ import BrickUtils from './BrickUtils';
 import BrickConfig from 'BrickConfig';
 
 import VarStore from 'varstore';
+import FormConfig from 'FormConfig';
 
 /**
  * Defines the `props` for `BrickLayer` 
@@ -57,9 +58,9 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         super(props, context);
 
         // massage the JSON to be used
-        if(props.layout) {
+        if (props.layout) {
             console.log('requesting addition of key fields');
-        
+
             this.addKeyField(props.layout);
         }
     }
@@ -124,12 +125,12 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      */
     private renderKids = (kids: [], context: object = null): any => {
         console.log('render kids');
-        if(context) {
+        if (context) {
             this.props.store.pushContext(context);
         }
 
         const result = this.renderLayout(kids);
-        if(context) {
+        if (context) {
             this.props.store.popContext();
         }
 
@@ -210,7 +211,21 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      */
     private copyBrickProperties(props: any, brickConfig: any): void {
         // find all keys inside configuration
-        const keys = Object.keys(brickConfig);
+        const keys:string[] = Object.keys(brickConfig) || [];
+
+        // check if this is a form element
+        const formElementConfig: FormConfig = Bricks.formElementMappings[brickConfig.brick];
+        if(formElementConfig) {
+            // if yes, add form element handlers to the keys
+            // so that the code below can bind them to
+            formElementConfig.methods.forEach(element => {
+                if(!keys.includes(element)) {
+                    keys.push(element);
+                }
+            });
+        }
+
+        // check if we have keys to bind to
         if (!keys || keys.length === 0) {
             // no prop is supplied, nothing to set
             return;
@@ -249,17 +264,69 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 continue;
             }
 
-            // yes, and thus it needs to mount to a handler function
-            // id for the function supplied?
-            if (value && typeof value === 'string') {
-                // get our cached handler
-                const handler = this.getHandler(value);
-                if (handler) {
-                    props[key] = handler;
-                    continue;
+            // the current key represents a `on` based function handler
+            // is this brick a form element?
+            let needsVarstoreUpdate: boolean = false;
+            if (formElementConfig) {
+                // if yes, we need to attach its methods to update varstore
+                if (formElementConfig.methods.includes(key)) {
+                    // this method needs to be wired differently
+                    // to update the varstore.
+                    needsVarstoreUpdate = true;
                 }
             }
+
+            // yes, and thus it needs to mount to a handler function
+            // id for the function supplied?
+            let handler: Function;
+            if (value && typeof value === 'string') {
+                // get our cached handler
+                handler = this.getHandler(value);
+            }
+
+            // if needed, wire the store updator
+            let updator: Function = handler;
+            if (needsVarstoreUpdate) {
+                const name: string = brickConfig.name || brickConfig.id;
+                if (name) {
+                    // create a handler to wire value to varstore
+                    updator = (...args) => {
+                        console.log('brickie: calling set vlue for name: ' + name);
+                        this.props.store.setValue(name, this.getFormElementValue(args, formElementConfig));
+
+                        // call any handler attached by client
+                        if(handler) {
+                            console.log('brickie: calling original handler');
+                            handler(...args);
+                        }
+                    }
+                }
+            }
+
+            // wire the handler
+            if (updator) {
+                props[key] = updator;
+                continue;
+            }
         }
+    }
+
+    getFormElementValue(args: any, formConfig: FormConfig): any {
+        // no arguments were passed by the handler
+        if (!args) {
+            return undefined;
+        }
+
+        const arg = args[formConfig.argIndex];
+        if (!arg) {
+            return undefined;
+        }
+
+        if(!formConfig.argField) {
+            return arg;
+        }
+
+        // 
     }
 
     /**
@@ -328,31 +395,40 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * as is.
      * 
      * @param json 
+     * 
+     * @param formName the name of the form, if any, which is
+     * the current running parent.
      */
-    private addKeyField(json: any):void {
+    private addKeyField(json: any, formName: string = ''): void {
         if (!json) {
             return;
         }
 
+        // json is not an object - nothing to do
         if (typeof json !== 'object') {
             return;
         }
 
+        // for array - iterate over each element in array
         if (Array.isArray(json)) {
             for (let index: number = 0; index < json.length; index++) {
                 const item = json[index];
-                this.addKeyField(item);
+                this.addKeyField(item, formName);
             }
 
             return;
         }
 
+        // add the key field if not already present
+        // this will allow faster reconcilation by react
         if (!json.key) {
             json.key = 'brickie-field-' + (++this.idCounter);
         }
 
+        // if JSON has children - run addition of key field
+        // on its children
         if (json.children) {
-            this.addKeyField(json.children);
+            this.addKeyField(json.children, formName);
         }
 
         // check for specific child attributes of the brick

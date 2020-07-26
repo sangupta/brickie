@@ -11,7 +11,7 @@ export default class FormConfig {
 
     methods: string[];
 
-    argIndex: number;
+    argIndex: number = 0;
 
     argField: string;
 
@@ -19,5 +19,5 @@ export default class FormConfig {
         this.name = name;
         this.methods = methods;
     }
-    
+
 }
