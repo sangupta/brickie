@@ -142,4 +142,36 @@ export default class Brickie {
         Bricks.unregisterAllBricks();
     }
 
+    /**
+     * Register the brick with given name to act like a HTML form
+     * tag.
+     * 
+     * @param name the name of the brick as registered in Brickie
+     * 
+     * @param methods (optional) the name of methods to capture for invoking
+     * method onSubmit with the form data
+     */
+    static registerForm(name: string, methods?: string | string[]): void {
+        Bricks.registerForm(name, methods);
+    }
+
+    /**
+     * Register the brick with given name to act like a HTML form
+     * element tag like `input` or `select`.
+     * 
+     * @param name the name of the brick as registered in Brickie
+     * 
+     * @param methods (optional) the name of methods to capture for invoking
+     * method onSubmit with the form data
+     * 
+     * @param argIndex (optional) the argument index in the event being
+     * shot by the react component
+     * 
+     * @param argField (optional) the field to read from the argument
+     * when the value is to be read from a child field
+     */
+    static registerFormElement(name: string, methods?: string | string[], argIndex?: number, argField?: string): void {
+        Bricks.registerFormElement(name, methods, argIndex, argField);
+    }
+
 }
