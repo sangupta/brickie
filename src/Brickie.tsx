@@ -128,8 +128,8 @@ export default class Brickie {
      * 
      * @param name 
      */
-    static unregister(name: string): void {
-        Bricks.unregister(name);
+    static unregisterBrick(name: string): void {
+        Bricks.unregisterBrick(name);
     }
 
     /**
@@ -138,8 +138,8 @@ export default class Brickie {
      * the UI.
      * 
      */
-    static unregisterAll(): void {
-        Bricks.unregisterAll();
+    static unregisterAllBricks(): void {
+        Bricks.unregisterAllBricks();
     }
 
 }

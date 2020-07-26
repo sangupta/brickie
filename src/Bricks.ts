@@ -37,11 +37,11 @@ export default class Bricks {
      * 
      * @param name 
      */
-    static unregister(name: string): void {
+    static unregisterBrick(name: string): void {
         delete Bricks.brickMappings[name];
     }
 
-    static unregisterAll(): void {
+    static unregisterAllBricks(): void {
         Bricks.brickMappings = {};
     }
 
