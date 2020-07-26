@@ -8,6 +8,8 @@ import BrickConfig from 'BrickConfig';
 import VarStore from 'varstore';
 import FormConfig from 'FormConfig';
 
+import { getExistsWithValue } from 'varstore/src/VarStoreUtils';
+
 /**
  * Defines the `props` for `BrickLayer` 
  * component.
@@ -211,15 +213,15 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      */
     private copyBrickProperties(props: any, brickConfig: any): void {
         // find all keys inside configuration
-        const keys:string[] = Object.keys(brickConfig) || [];
+        const keys: string[] = Object.keys(brickConfig) || [];
 
         // check if this is a form element
         const formElementConfig: FormConfig = Bricks.formElementMappings[brickConfig.brick];
-        if(formElementConfig) {
+        if (formElementConfig) {
             // if yes, add form element handlers to the keys
             // so that the code below can bind them to
             formElementConfig.methods.forEach(element => {
-                if(!keys.includes(element)) {
+                if (!keys.includes(element)) {
                     keys.push(element);
                 }
             });
@@ -295,7 +297,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                         this.props.store.setValue(name, this.getFormElementValue(args, formElementConfig));
 
                         // call any handler attached by client
-                        if(handler) {
+                        if (handler) {
                             console.log('brickie: calling original handler');
                             handler(...args);
                         }
@@ -311,6 +313,18 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         }
     }
 
+    /**
+     * Extract the value against a form field from the list of the arguments
+     * supplied by the handler to the React component. If arguments are `undefined`,
+     * or `null`, a value of `null` is returned. If the argument index is not
+     * supplied during registering the element, the very first argument (0th index)
+     * is picked. If argument field is not defined, the entire argument is set
+     * in store.
+     * 
+     * @param args the incoming arguments
+     * 
+     * @param formConfig the `FormConfig` instance attached to the form element
+     */
     getFormElementValue(args: any, formConfig: FormConfig): any {
         // no arguments were passed by the handler
         if (!args) {
@@ -322,11 +336,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             return undefined;
         }
 
-        if(!formConfig.argField) {
+        if (!formConfig.argField) {
             return arg;
         }
 
-        // 
+        return getExistsWithValue(arg, formConfig.argField).value;
     }
 
     /**
