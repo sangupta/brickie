@@ -38,6 +38,11 @@ interface BrickLayerProps {
 export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
     /**
+     * An identifier counter to generate unique keys
+     */
+    private idCounter: number = 0;
+
+    /**
      * Handler cache to speed up re-rendering cycles
      */
     private handlerCache: Map<string, Function> = new Map();
@@ -50,6 +55,13 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      */
     constructor(props, context) {
         super(props, context);
+
+        // massage the JSON to be used
+        if(props.layout) {
+            console.log('requesting addition of key fields');
+        
+            this.addKeyField(props.layout);
+        }
     }
 
     /**
@@ -308,4 +320,61 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // no valid handler found
         return null;
     }
+
+    /**
+     * Internal method to add `key` attributes to each brick
+     * in the JSON. This allows `React` to perform diffs faster.
+     * Any `key` attribute already existing on a brick is left
+     * as is.
+     * 
+     * @param json 
+     */
+    private addKeyField(json: any):void {
+        if (!json) {
+            return;
+        }
+
+        if (typeof json !== 'object') {
+            return;
+        }
+
+        if (Array.isArray(json)) {
+            for (let index: number = 0; index < json.length; index++) {
+                const item = json[index];
+                this.addKeyField(item);
+            }
+
+            return;
+        }
+
+        if (!json.key) {
+            json.key = 'brickie-field-' + (++this.idCounter);
+        }
+
+        if (json.children) {
+            this.addKeyField(json.children);
+        }
+
+        // check for specific child attributes of the brick
+        let brickConfig: BrickConfig = Bricks.brickMappings[json.brick];
+
+        if (!brickConfig) {
+            brickConfig = SPECIAL_BRICKS[json.brick];
+        }
+
+        if (!brickConfig) {
+            return;
+        }
+
+        if (brickConfig.childAttributes) {
+            for (let index = 0; index < brickConfig.childAttributes.length; index++) {
+                let attr: string = brickConfig.childAttributes[index];
+
+                if (json[attr]) {
+                    this.addKeyField(json[attr]);
+                }
+            }
+        }
+    }
+
 }

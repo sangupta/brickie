@@ -3,7 +3,6 @@ import * as ReactDOM from 'react-dom';
 import BrickLayer from './BrickLayer';
 import Bricks from './Bricks';
 import BrickConfig from './BrickConfig';
-import { SPECIAL_BRICKS } from './Bricks';
 import VarStore from 'varstore';
 
 /**
@@ -12,11 +11,6 @@ import VarStore from 'varstore';
  * with this class.
  */
 export default class Brickie {
-
-    /**
-     * An identifier counter to generate unique keys
-     */
-    private static idCounter: number = 0;
 
     /**
      * The react element that is currently rendered
@@ -62,10 +56,6 @@ export default class Brickie {
         if (!mountElement) {
             throw new Error('HTMLElement to mount the layout to is a must.');
         }
-
-        // add _id to each element to help re-rendering faster
-        Brickie.idCounter = 0;
-        Brickie.addKeyField(json);
 
         this.domElement = mountElement;
 
@@ -150,62 +140,6 @@ export default class Brickie {
      */
     static unregisterAll(): void {
         Bricks.unregisterAll();
-    }
-
-    /**
-     * Internal method to add `key` attributes to each brick
-     * in the JSON. This allows `React` to perform diffs faster.
-     * Any `key` attribute already existing on a brick is left
-     * as is.
-     * 
-     * @param json 
-     */
-    private static addKeyField(json: any) {
-        if (!json) {
-            return;
-        }
-
-        if (typeof json !== 'object') {
-            return;
-        }
-
-        if (Array.isArray(json)) {
-            for (let index: number = 0; index < json.length; index++) {
-                const item = json[index];
-                Brickie.addKeyField(item);
-            }
-
-            return;
-        }
-
-        if (!json.key) {
-            json.key = 'brickie-field-' + (++Brickie.idCounter);
-        }
-
-        if (json.children) {
-            Brickie.addKeyField(json.children);
-        }
-
-        // check for specific child attributes of the brick
-        let brickConfig: BrickConfig = Bricks.brickMappings[json.brick];
-
-        if (!brickConfig) {
-            brickConfig = SPECIAL_BRICKS[json.brick];
-        }
-
-        if (!brickConfig) {
-            return;
-        }
-
-        if (brickConfig.childAttributes) {
-            for (let index = 0; index < brickConfig.childAttributes.length; index++) {
-                let attr: string = brickConfig.childAttributes[index];
-
-                if (json[attr]) {
-                    Brickie.addKeyField(json[attr]);
-                }
-            }
-        }
     }
 
 }
