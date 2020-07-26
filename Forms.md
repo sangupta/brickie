@@ -96,12 +96,15 @@ export default class Textfield extends React.Component {
 // The above component can be registered as below/
 //
 // trap `onChange` method to update the value of attribute
-// the 2nd argument is provided as an array in case the form element
-// triggers different action methods on different state.
-// 
-// Not sure if components do that
 
-Brickie.registerFormElement("Textfield", [ "onChange" ]); 
+Brickie.registerFormElement("Textfield", "onChange"); 
+
+// similar to form registeration, the 2nd argument can be 
+// a string array to register callback method against multiple
+// triggers that may be fired in different state.
+// (not sure if component libraries do that)
+
+Brickie.registerFormElement("Textfield", [ "onChange", "onUpdate" ]); 
 ```
 
 But components may not always pass the form field value as the very first
