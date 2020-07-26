@@ -154,7 +154,9 @@ export default class ColorPicker extends React.Component {
 Brickie.registerFormElement("ColorPicker", [ "onChange" ], 1, "target.value"); 
 ```
 
-## Basic Form example
+## Form and `varstore` state
+
+### Basic form
 
 ```html
 <CustomForm>
@@ -172,7 +174,7 @@ When elements above change, the store gets populated as:
 }
 ```
 
-## Form with name/id example
+### Form with name/id example
 
 ```html
 <CustomForm name="myForm">
@@ -186,6 +188,38 @@ When elements above change, the store gets populated as:
     "myForm" : {
         "firstName" : "brickie",
         "active" : true
+    }
+}
+```
+
+### Form with aggregating component
+
+```html
+<CustomForm name="myForm">
+    <Address id="billing" />
+    
+    <!-- note shipping will take precedence below -->
+    <Address name="shipping" id="shippingAddress" />
+</CustomForm>
+```
+
+```json
+{
+    "myForm" : {
+        "billing" : {
+            "line1" : "home, sweet home",
+            "city" : "San Jose",
+            "state" : "CA",
+            "country" : "US",
+            "zipCode" : 95110
+        },
+        "shipping" : {
+            "line1" : "home, sweet home",
+            "city" : "San Jose",
+            "state" : "CA",
+            "country" : "US",
+            "zipCode" : 95110
+        }
     }
 }
 ```
