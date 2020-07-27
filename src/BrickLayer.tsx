@@ -289,7 +289,12 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             // if needed, wire the store updator
             let updator: Function = handler;
             if (needsVarstoreUpdate) {
-                const name: string = brickConfig.name || brickConfig.id;
+                let name: string = brickConfig.name || brickConfig.id;
+                const form: string = brickConfig.form || '';
+                if (form) {
+                    name = form + '.' + name;
+                }
+
                 if (name) {
                     // create a handler to wire value to varstore
                     updator = (...args) => {
