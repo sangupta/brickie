@@ -63,7 +63,9 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         if (props.layout) {
             console.log('requesting addition of key fields');
 
-            this.addKeyField(props.layout);
+            this.addKeyFields(props.layout);
+
+            console.log('layout generated: ', props.layout);
         }
     }
 
@@ -121,9 +123,15 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
     /**
      * Render the internal `Brickie` components for components
      * like `for` or `if`. These methods get access to this
-     * `Brickie` internal method to manipulate the UI.
+     * `Brickie` internal method to manipulate the UI. The method
+     * is invoked by these special bricks to render children by
+     * the framework, using additonal context.
      *  
-     * @param brickConfig 
+     * @param kids the JSON array of elements to be rendered
+     * 
+     * @param context the `object` to be used as additional context
+     * when rendering. The context is pushed to `varstore` and then
+     * the kids are rendered.
      */
     private renderKids = (kids: [], context: object = null): any => {
         console.log('render kids');
@@ -142,7 +150,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
     /**
      * Render a single brick.
      * 
-     * @param brickJSON the brick definition to render
+     * @param brickJSON the brick definition to render (as JSON)
      */
     renderBrick = (brickJSON: any): any => {
         const brickName: string = brickJSON.brick;
@@ -201,15 +209,21 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
     }
 
     /**
-     * we cannot just blindly copy all props
-     * like Object.assign(props, brickConfig);
+     * Method to copy all brick properties to the `prop`s
+     * for the React component.
+     * 
+     * We cannot just blindly copy all props
+     * like `Object.assign(props, brickConfig);`
      * any handler directly for that shall not
      * work. thus for any prop that starts with
      * `on` we will convert that to a handler of
      * ours that we shall use to pass.
      * 
-     * @param props 
-     * @param brickConfig 
+     * @param props the `props` object to be used with the 
+     * React component
+     * 
+     * @param brickConfig the brick definition as specified in the
+     * JSON array
      */
     private copyBrickProperties(props: any, brickConfig: any): void {
         // find all keys inside configuration
@@ -355,7 +369,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * cached to speed up development as well as not to 
      * remove/add listeners during re-rendering.
      * 
-     * @param id 
+     * @param id the `string` identifier to be used as the
+     * handler
      */
     private getHandler(id: string): Function {
         const handler = this.props.callbackHandler;
@@ -413,12 +428,16 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * Any `key` attribute already existing on a brick is left
      * as is.
      * 
+     * This method also adds the `form` name to each form element
+     * as well so that aggregation can be done correctly, when
+     * the form is used.
+     * 
      * @param json 
      * 
      * @param formName the name of the form, if any, which is
      * the current running parent.
      */
-    private addKeyField(json: any, formName: string = ''): void {
+    private addKeyFields(json: any, formName: string = ''): void {
         if (!json) {
             return;
         }
@@ -432,7 +451,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         if (Array.isArray(json)) {
             for (let index: number = 0; index < json.length; index++) {
                 const item = json[index];
-                this.addKeyField(item, formName);
+                this.addKeyFields(item, formName);
             }
 
             return;
@@ -447,7 +466,26 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // if JSON has children - run addition of key field
         // on its children
         if (json.children) {
-            this.addKeyField(json.children, formName);
+            let childFormName: string = formName;
+            // check if current brick is a form
+            if (Bricks.isFormBrick(json.brick)) {
+                if (json.name) {
+                    // the form has been given a name
+                    // we will use this form name on all child elements
+                    childFormName = json.name;
+                }
+            }
+            this.addKeyFields(json.children, childFormName);
+        }
+
+        // for all form element bricks add the form name
+        // so that varstore can be managed in the right order
+        if (Bricks.isFormElementBrick(json.brick)) {
+            // check if we have a form already present or not
+            // if not, add the form name if needed
+            if (formName && !json.form) {
+                json.form = formName;
+            }
         }
 
         // check for specific child attributes of the brick
@@ -466,7 +504,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 let attr: string = brickConfig.childAttributes[index];
 
                 if (json[attr]) {
-                    this.addKeyField(json[attr]);
+                    this.addKeyFields(json[attr]);
                 }
             }
         }

@@ -58,14 +58,60 @@ export default class Bricks {
     /**
      * Unregister a previously registered brick by this name.
      * 
-     * @param name 
+     * @param name the name of the brick that needs to be removed
      */
     static unregisterBrick(name: string): void {
         delete Bricks.brickMappings[name];
     }
 
+    /**
+     * Unregister all bricks immediately. This does not unregister
+     * Brickie's own special bricks.
+     */
     static unregisterAllBricks(): void {
         Bricks.brickMappings = {};
+    }
+
+    /**
+     * Check if the brick with the given name has been registered
+     * as a `form` brick.
+     * 
+     * @param name the name of the brick
+     * 
+     * @throws if the brick name is `undefined`, `null` or `empty`
+     */
+    static isFormBrick(name: string): boolean {
+        if (!name) {
+            throw new Error('Brick name is required');
+        }
+
+        let config = Bricks.formMappings[name];
+        if (config) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the brick with the given name has been registered
+     * as a `form element` brick.
+     * 
+     * @param name the name of the brick
+     * 
+     * @throws if the brick name is `undefined`, `null` or `empty`
+     */
+    static isFormElementBrick(name: string): boolean {
+        if (!name) {
+            throw new Error('Brick name is required');
+        }
+
+        let config = Bricks.formElementMappings[name];
+        if (config) {
+            return true;
+        }
+
+        return false;
     }
 
     private static getFormConfig(name: string, methods?: string | string[]): FormConfig {
