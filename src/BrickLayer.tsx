@@ -356,7 +356,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         }
 
         const expression: string = value.substring(1, value.length - 1);
-        this.props.store.evaluate(expression);
+        return this.props.store.evaluate(expression);
     }
 
     /**
