@@ -170,9 +170,16 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             brickConfig = this.getBrick(brickName);
         }
 
-        if (!brickConfig) {
-            console.log('No brick found for given name: ', brickJSON.brick);
-            return null;
+        // check if the brick is registered or not
+        let elementCtor: any;
+        if (brickConfig) {
+            elementCtor = brickConfig.brickCtor as any;
+        } else {
+            console.warn('No brick found for given name: ', brickJSON.brick);
+
+            // this may be a standard HTML tag
+            // let's just wire it up and return
+            elementCtor = brickJSON.brick;
         }
 
         // create an object instance of the component that we have
@@ -195,14 +202,18 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         if (childBricks) {
             if (BrickUtils.isPrimitive(childBricks)) {
-                children = childBricks;
+                if (typeof childBricks === 'string') {
+                    children = this.evaluateExpression(childBricks);
+                } else {
+                    children = childBricks;
+                }
             } else {
                 children = this.renderLayout(brickJSON.children);
             }
         }
 
         // create the element
-        let element = React.createElement(brickConfig.brickCtor as any, props, children);
+        let element = React.createElement(elementCtor, props, children);
 
         // return it
         return element;
@@ -259,25 +270,14 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
             // is the value a function back in the JSON itself
             // mount it directly, nothing to massage here
-            if (typeof value === 'function') {
+            if (typeof value !== 'string') {
                 props[key] = value;
                 continue;
             }
 
             // does prop start with `on` - it must be a handler
             if (!key.startsWith('on')) {
-                // no! so simply copy this simple prop
-                if (!key.startsWith('$')) {
-                    props[key] = value;
-                    continue;
-                }
-
-                // this is an expression, that needs to be
-                // evaluated
-                console.log('evaluate: ' + value);
-                let evaluated = this.props.store.evaluate(value);
-                props[key.substring(1)] = evaluated;
-                continue;
+                props[key] = this.evaluateExpression(value);
             }
 
             // the current key represents a `on` based function handler
@@ -330,6 +330,28 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 continue;
             }
         }
+    }
+
+    /**
+     * Evaluate the value of this string expression, checking
+     * first if this is an expression or not. If it is not an
+     * expression, return the value as is, else evaluate.
+     * 
+     * @param value 
+     */
+    evaluateExpression(value: string): any {
+        if (!value || value.trim().length === 0) {
+            return value;
+        }
+
+        // check if the value is an expression
+        // an expression starts with '{' and ends with '}'
+        if (!(value.startsWith('{') && value.endsWith('}'))) {
+            return value;
+        }
+
+        const expression:string = value.substring(1, value.length - 1);
+        this.props.store.evaluate(expression);
     }
 
     /**
