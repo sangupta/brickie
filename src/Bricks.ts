@@ -1,7 +1,8 @@
 import ForLoop from "./components/ForLoop";
 import IfClause from "./components/IfClause";
 import BrickConfig from './BrickConfig';
-import FormConfig from "./FormConfig";
+import FormConfig, { HandlerMap } from "./FormConfig";
+import HandlerConfig from "HandlerConfig";
 
 export type BrickMap = { [key: string]: BrickConfig };
 
@@ -12,6 +13,11 @@ export const SPECIAL_BRICKS: BrickMap = {
     'if': new BrickConfig(IfClause, ['then', 'else'])
 }
 
+/**
+ * Contains configuration for different kind
+ * of bricks we have in the system.
+ * 
+ */
 export default class Bricks {
 
     static brickMappings: BrickMap = {};
@@ -40,19 +46,60 @@ export default class Bricks {
     }
 
     static registerForm(name: string, methods?: string | string[]): void {
-        Bricks.formMappings[name] = Bricks.getFormConfig(name, methods);
+        if (!name) {
+            throw new Error('Cannot register form without a name');
+        }
+
+        const handlers: HandlerMap = {};
+
+        if (Array.isArray(methods)) {
+            methods.forEach(method => {
+                handlers[method] = undefined;
+            });
+        }
+
+        if (typeof methods === 'string') {
+            handlers[methods] = undefined;
+        }
+
+        name = name.trim();
+
+        // check if we already have config registered
+        let config = Bricks.formMappings[name];
+        if (!config) {
+            config = new FormConfig(name, handlers);
+            Bricks.formMappings[name] = config;
+        } else {
+            // merge handlers
+            config.handlers = Object.assign(config.handlers, handlers);
+        }
     }
 
-    static registerFormElement(name: string, methods?: string | string[], argIndex?: number, argField?: string): void {
-        const config = Bricks.getFormConfig(name, methods);
-        if (argIndex) {
-            config.argIndex = argIndex;
-        }
-        if (argField) {
-            config.argField = argField;
+    static registerFormElement(name: string, handlers: HandlerConfig | HandlerConfig[] = []): void {
+        if (!name) {
+            throw new Error('Cannot register form without a name');
         }
 
-        Bricks.formElementMappings[name] = config;
+        const handlerMap: HandlerMap = {};
+        if (Array.isArray(handlers)) {
+            handlers.forEach(handler => {
+                handlerMap[handler.method] = handler;
+            });
+        } else {
+            handlerMap[handlers.method] = handlers;
+        }
+
+        name = name.trim();
+
+        // check if we already have config registered
+        let config = Bricks.formElementMappings[name];
+        if (!config) {
+            config = new FormConfig(name, handlerMap);
+            Bricks.formElementMappings[name] = config;
+        } else {
+            // existing - merge the handler map
+            config.handlers = Object.assign(config.handlers, handlerMap);
+        }
     }
 
     /**
@@ -112,24 +159,6 @@ export default class Bricks {
         }
 
         return false;
-    }
-
-    private static getFormConfig(name: string, methods?: string | string[]): FormConfig {
-        if (!name) {
-            throw new Error('Cannot register form/element without a name');
-        }
-
-        let array;
-        if (Array.isArray(methods)) {
-            array = methods;
-        }
-        if (typeof methods === 'string') {
-            array = [];
-            array.push(methods);
-        }
-
-        name = name.trim();
-        return new FormConfig(name, array);
     }
 
 }

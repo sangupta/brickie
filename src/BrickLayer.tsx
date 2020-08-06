@@ -9,6 +9,7 @@ import VarStore from 'varstore';
 import FormConfig from 'FormConfig';
 
 import { getExistsWithValue } from 'varstore/src/VarStoreUtils';
+import HandlerConfig from 'HandlerConfig';
 
 /**
  * Defines the `props` for `BrickLayer` 
@@ -245,7 +246,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         if (formElementConfig) {
             // if yes, add form element handlers to the keys
             // so that the code below can bind them to
-            formElementConfig.methods.forEach(element => {
+            let formElementKeys: string[] = Object.keys(formElementConfig.handlers);
+            formElementKeys.forEach(element => {
                 if (!keys.includes(element)) {
                     keys.push(element);
                 }
@@ -268,9 +270,12 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 continue;
             }
 
+            // is this a form key
+            const isFormKey: boolean = formElementConfig && !!formElementConfig.handlers[key];
+
             // is the value a function back in the JSON itself
             // mount it directly, nothing to massage here
-            if (typeof value !== 'string') {
+            if (!isFormKey && typeof value !== 'string') {
                 props[key] = value;
                 continue;
             }
@@ -285,7 +290,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             let needsVarstoreUpdate: boolean = false;
             if (formElementConfig) {
                 // if yes, we need to attach its methods to update varstore
-                if (formElementConfig.methods.includes(key)) {
+                if (key in formElementConfig.handlers) {
                     // this method needs to be wired differently
                     // to update the varstore.
                     needsVarstoreUpdate = true;
@@ -313,7 +318,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                     // create a handler to wire value to varstore
                     updator = (...args) => {
                         console.log('brickie: calling set vlue for name: ' + name);
-                        this.props.store.setValue(name, this.getFormElementValue(args, formElementConfig));
+                        this.props.store.setValue(name, this.getFormElementValue(key, args, formElementConfig));
 
                         // call any handler attached by client
                         if (handler) {
@@ -350,7 +355,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             return value;
         }
 
-        const expression:string = value.substring(1, value.length - 1);
+        const expression: string = value.substring(1, value.length - 1);
         this.props.store.evaluate(expression);
     }
 
@@ -362,26 +367,31 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * is picked. If argument field is not defined, the entire argument is set
      * in store.
      * 
+     * @param key the key name as specified in brick. this is also the handler name
+     * that is being trapped
+     * 
      * @param args the incoming arguments
      * 
      * @param formConfig the `FormConfig` instance attached to the form element
      */
-    getFormElementValue(args: any, formConfig: FormConfig): any {
+    getFormElementValue(key: string, args: any, formConfig: FormConfig): any {
         // no arguments were passed by the handler
         if (!args) {
             return undefined;
         }
 
-        const arg = args[formConfig.argIndex];
+        const config: HandlerConfig = formConfig.handlers[key];
+
+        const arg = args[config.argIndex];
         if (!arg) {
             return undefined;
         }
 
-        if (!formConfig.argField) {
+        if (!config.argField) {
             return arg;
         }
 
-        return getExistsWithValue(arg, formConfig.argField).value;
+        return getExistsWithValue(arg, config.argField).value;
     }
 
     /**

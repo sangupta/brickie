@@ -1,3 +1,7 @@
+import HandlerConfig from './HandlerConfig';
+
+export type HandlerMap = { [key: string]: HandlerConfig };
+
 /**
  * Stores details on a form and form elements: the
  * name of the brick, the methods to wire, and other
@@ -9,15 +13,11 @@ export default class FormConfig {
 
     name: string;
 
-    methods: string[];
+    handlers: HandlerMap;
 
-    argIndex: number = 0;
-
-    argField: string;
-
-    constructor(name: string, methods: string[] = []) {
+    constructor(name: string, handlers: HandlerMap = {}) {
         this.name = name;
-        this.methods = methods;
+        this.handlers = handlers;
     }
 
 }

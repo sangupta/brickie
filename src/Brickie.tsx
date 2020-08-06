@@ -4,6 +4,7 @@ import BrickLayer from './BrickLayer';
 import Bricks from './Bricks';
 import BrickConfig from './BrickConfig';
 import VarStore from 'varstore';
+import HandlerConfig from './HandlerConfig';
 
 /**
  * The central class for Brickie framework.
@@ -165,7 +166,7 @@ export default class Brickie {
      * 
      * @param name the name of the brick as registered in Brickie
      * 
-     * @param methods (optional) the name of methods to capture for invoking
+     * @param methods (optional) the name of method/methods to capture for invoking
      * method onSubmit with the form data
      * 
      * @param argIndex (optional) the argument index in the event being
@@ -175,7 +176,33 @@ export default class Brickie {
      * when the value is to be read from a child field
      */
     static registerFormElement(name: string, methods?: string | string[], argIndex?: number, argField?: string): void {
-        Bricks.registerFormElement(name, methods, argIndex, argField);
+        if (!methods) {
+            Bricks.registerFormElement(name, []);
+            return;
+        }
+
+        if (Array.isArray(methods)) {
+            methods.forEach(method => {
+                const handler = new HandlerConfig(method, argIndex || 0, argField || '');
+                Bricks.registerFormElement(name, handler);
+            });
+            return;
+        }
+
+        const handler = new HandlerConfig(methods, argIndex || 0, argField || '');
+        Bricks.registerFormElement(name, handler);
+    }
+
+    /**
+     * Register the brick with given name to act like a HTML form
+     * element tag like `input` or `select`.
+     * 
+     * @param name the name of the brick as registered in Brickie
+     * 
+     * @param handlers (optional) the handlers to attach to this form element
+     */
+    static registerFormElementWithHandler(name: string, handlers: HandlerConfig | HandlerConfig[] = []): void {
+        Bricks.registerFormElement(name, handlers);
     }
 
 }
