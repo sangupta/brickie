@@ -27,14 +27,18 @@ export default class Brickie {
      * new instance of `Brickie` and lays out the UI, and then
      * return the generated instance.
      * 
-     * @param json 
+     * @param json the JSON object to render
+     * 
      * @param mountElement the `HTMLElement` to which the layout
      * shall be rendered
      * 
-     * @param state the initial state of the layout that needs to
-     * be rendered. To update the state in an already rendered
-     * layout, please use methods on the `Brickie` instance thus
-     * returned.
+     * @param store the `varstore` object that needs to be used
+     * for rendering. To update the state in an already rendered
+     * layout, please use methods on the `varstore` instance 
+     * directly.
+     * 
+     * @param callbackHandler the callback handler to be used when
+     * actions are invoked on components
      */
     static lay(json: object, mountElement: HTMLElement, store: VarStore, callbackHandler?: Function | object): Brickie {
         const brickie: Brickie = new Brickie();
