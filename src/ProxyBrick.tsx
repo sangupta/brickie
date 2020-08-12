@@ -119,13 +119,21 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
         // find out all props that need to be assigned to this element
         // first, re-compute the dynamic properties for this brick
         const evaluated = {};
+        const keys:string[] = Object.keys(this.ast);
+        keys.forEach(key => {
+            if('children' === key) {
+                return;
+            }
+
+            evaluated[key] = this.props.store.evaluateNode(this.ast[key]);
+        });
 
         // second, merge static and dynamic properties
         const props = { ...this.props.staticProps, ...evaluated };
 
         // check if children is part of evaluated properties or not
         let children;
-        if(this.props.dynamicProps['children']) {
+        if(this.ast.children) {
             children = this.props.store.evaluateNode(this.ast.children);
         } else {
             children = this.props.renderKids(this.props.childBricks);
