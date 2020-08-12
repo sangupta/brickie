@@ -45,7 +45,7 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
      * All dynamic identifiers that this component depends
      * upon. Will be computed at component construction time
      */
-    depends: string[] = [];
+    depends: Set<string> = new Set();
 
     /**
      * Store parsed AST nodes against each dynamic prop
@@ -62,7 +62,7 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
         super(props, config);
 
         // find all dynamic property names
-        if(!this.props.dynamicProps) {
+        if (!this.props.dynamicProps) {
             console.error('No dynamic props supplied to proxy');
             return;
         }
@@ -80,14 +80,20 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
             const dynamicProp: string = this.props.dynamicProps[dynamicKey];
 
             // convert it to the AST expression
-            const node: any = this.props.store.parseExpression(dynamicProp);
+            const nodeAndIdentifiers: any = this.props.store.parseExpression(dynamicProp);
+            const node: any = nodeAndIdentifiers.node;
+            const identifiers: string[] = nodeAndIdentifiers.identifiers;
+
+            // find all identifiers that all these ASTs depend upon
+            if (identifiers && identifiers.length > 0) {
+                identifiers.forEach(id => {
+                    this.depends.add(id);
+                });
+            }
 
             // cache this value
             this.ast[dynamicKey] = node;
         });
-
-        // find all identifiers that all these ASTs depend upon
-        this.depends = ['firstName'];
 
         // next subscribe to each identifier in the varstore
         // this will allow that 
@@ -119,9 +125,9 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
         // find out all props that need to be assigned to this element
         // first, re-compute the dynamic properties for this brick
         const evaluated = {};
-        const keys:string[] = Object.keys(this.ast);
+        const keys: string[] = Object.keys(this.ast);
         keys.forEach(key => {
-            if('children' === key) {
+            if ('children' === key) {
                 return;
             }
 
@@ -133,7 +139,7 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
 
         // check if children is part of evaluated properties or not
         let children;
-        if(this.ast.children) {
+        if (this.ast.children) {
             children = this.props.store.evaluateNode(this.ast.children);
         } else {
             children = this.props.renderKids(this.props.childBricks);
