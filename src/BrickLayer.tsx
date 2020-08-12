@@ -6,10 +6,13 @@ import BrickUtils from './BrickUtils';
 import BrickConfig from 'BrickConfig';
 
 import VarStore from 'varstore';
-import FormConfig from 'FormConfig';
+import FormConfig from './FormConfig';
 
 import { getExistsWithValue } from 'varstore/src/VarStoreUtils';
-import HandlerConfig from 'HandlerConfig';
+import HandlerConfig from './HandlerConfig';
+import ProxyBrick from './ProxyBrick';
+
+const BRICK_WITH_EXPR_IDENTIFIER = "__expr";
 
 /**
  * Defines the `props` for `BrickLayer` 
@@ -80,7 +83,9 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             return null;
         }
 
-        return this.renderLayout(layout);
+        const rendered = this.renderLayout(layout);
+        console.log('completed rendering...');
+        return rendered;
     }
 
     /**
@@ -135,7 +140,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * the kids are rendered.
      */
     private renderKids = (kids: [], context: object = null): any => {
-        console.log('render kids');
+        // console.log('render kids');
         if (context) {
             this.props.store.pushContext(context);
         }
@@ -154,6 +159,14 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * @param brickJSON the brick definition to render (as JSON)
      */
     renderBrick = (brickJSON: any): any => {
+        if(!brickJSON) {
+            return null;
+        }
+        
+        if(BrickUtils.isPrimitive(brickJSON)) {
+            return brickJSON;
+        }
+
         const brickName: string = brickJSON.brick;
         if (!brickName) {
             console.log('Brick name has not been specified');
@@ -167,7 +180,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         if (brickConfig) {
             specialBrick = true;
         } else {
-            // this is a generic brick - handle it normally
+            // this is a normal brick (React component) - handle it normally
             brickConfig = this.getBrick(brickName);
         }
 
@@ -181,6 +194,39 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             // this may be a standard HTML tag
             // let's just wire it up and return
             elementCtor = brickJSON.brick;
+        }
+
+        // check if this brick has expressions
+        // if yes, we need to proxy this brick
+        if (brickJSON[BRICK_WITH_EXPR_IDENTIFIER]) {
+            const exprFields: string[] = brickJSON[BRICK_WITH_EXPR_IDENTIFIER];
+
+            // yes, this is a brick with expressions
+            // let's proxy it
+            // get all static props
+            const staticProps: any = {};
+            this.copyBrickProperties(staticProps, brickJSON, exprFields.concat(BRICK_WITH_EXPR_IDENTIFIER));
+
+            // get all dynamic props
+            const dynamicProps: any = {};
+            exprFields.forEach(field => {
+                let x:string = brickJSON[field];
+                dynamicProps[field] = x.substr(1, x.length - 2);
+            });
+
+            console.log('proxy json: ', brickJSON);
+
+            /// build props
+            const proxyProps: any = {};
+            proxyProps.key = brickJSON.key + '-proxy';
+            proxyProps.element = elementCtor;
+            proxyProps.staticProps = staticProps;
+            proxyProps.dynamicProps = dynamicProps;
+            proxyProps.store = this.props.store;
+            proxyProps.childBricks = brickJSON.children;
+            proxyProps.renderKids = this.renderKids;
+
+            return React.createElement(ProxyBrick, proxyProps, null);
         }
 
         // create an object instance of the component that we have
@@ -236,8 +282,12 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * 
      * @param brickConfig the brick definition as specified in the
      * JSON array
+     * 
+     * @param skipProps the `prop` names that need to be skipped.
+     * These properties will be copied in a different way.
+     * 
      */
-    private copyBrickProperties(props: any, brickConfig: any): void {
+    private copyBrickProperties(props: any, brickConfig: any, skipProps: string[] = []): void {
         // find all keys inside configuration
         const keys: string[] = Object.keys(brickConfig) || [];
 
@@ -267,6 +317,12 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             const value = brickConfig[key];
 
             if (key === 'brick') {
+                continue;
+            }
+
+            // skip key if it is not needed
+            if (skipProps.includes(key)) {
+                console.log('skipping expr key: ' + key + ' on brick: ' + brickConfig.brick)
                 continue;
             }
 
@@ -317,7 +373,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 if (name) {
                     // create a handler to wire value to varstore
                     updator = (...args) => {
-                        console.log('brickie: calling set vlue for name: ' + name);
+                        // console.log('brickie: calling set value for name: ' + name);
                         this.props.store.setValue(name, this.getFormElementValue(key, args, formElementConfig));
 
                         // call any handler attached by client
@@ -351,7 +407,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         // check if the value is an expression
         // an expression starts with '{' and ends with '}'
-        if (!(value.startsWith('{') && value.endsWith('}'))) {
+        if (!this.isPropAnExpression(value)) {
             return value;
         }
 
@@ -495,6 +551,15 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             json.key = 'brickie-field-' + (++this.idCounter);
         }
 
+        // check other attributes of this brick
+        const fields: string[] = this.findPropsThatAreExpressions(json);
+        if (fields && fields.length > 0) {
+            // the brick has expressions
+            json[BRICK_WITH_EXPR_IDENTIFIER] = fields;
+        } else {
+            delete json[BRICK_WITH_EXPR_IDENTIFIER];
+        }
+
         // if JSON has children - run addition of key field
         // on its children
         if (json.children) {
@@ -531,6 +596,10 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             return;
         }
 
+        // these are the attributes that can act as children
+        // instead of the `children` prop - like `if` component
+        // takes a `then` and `else` block - which are essentially
+        // children for a condition
         if (brickConfig.childAttributes) {
             for (let index = 0; index < brickConfig.childAttributes.length; index++) {
                 let attr: string = brickConfig.childAttributes[index];
@@ -542,4 +611,57 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         }
     }
 
+    /**
+     * Check if a given prop value is an expression or 
+     * not (surrounded by `{}`).
+     * 
+     * @param value 
+     */
+    private isPropAnExpression(value: any): boolean {
+        if (!value) {
+            return false;
+        }
+
+        if (typeof value !== 'string') {
+            return false;
+        }
+
+        const str: string = value.trim();
+        if (str.length < 2) {
+            return false;
+        }
+        if (str.startsWith('{') && str.endsWith('}')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Return all keys for a JSON object (brick) that act
+     * as expressions - surrounded by `{}` brackets.
+     * 
+     * @param json 
+     */
+    private findPropsThatAreExpressions(json: any): string[] {
+        if (!json) {
+            return null;
+        }
+
+        const keys: string[] = Object.keys(json);
+        if (!keys) {
+            return null;
+        }
+
+        const result: string[] = [];
+
+        keys.forEach(key => {
+            let value: any = json[key];
+            if (this.isPropAnExpression(value)) {
+                result.push(key);
+            }
+        });
+
+        return result;
+    }
 }
