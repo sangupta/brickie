@@ -2,7 +2,7 @@
     "name": "brickie",
     "description": "Just lay bricks",
     "version": "0.0.1",
-    "main": "src/Brickie",
+    "main": "src/index",
     "scripts": {
         "tsc": "tsc --noEmit"
     },
@@ -12,7 +12,7 @@
     },
     "author": {
         "name": "Sandeep Gupta",
-        "email": "sangupta@adobe.com",
+        "email": "sandy.pec@gmail.com",
         "url": "https://sangupta.com"
     },
     "devDependencies": {
