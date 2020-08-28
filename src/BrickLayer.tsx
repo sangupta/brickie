@@ -290,7 +290,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         items.forEach(item => {
             const params: string[] = item.split(':');
             if (params.length == 2) {
-                let key: string = params[0];
+                let key: string = params[0].trim();
                 let updatedKey = '';
                 // remove hyphen and convert next char to upper case
                 let convert:boolean = false;
