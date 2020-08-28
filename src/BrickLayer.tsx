@@ -159,11 +159,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * @param brickJSON the brick definition to render (as JSON)
      */
     renderBrick = (brickJSON: any): any => {
-        if(!brickJSON) {
+        if (!brickJSON) {
             return null;
         }
-        
-        if(BrickUtils.isPrimitive(brickJSON)) {
+
+        if (BrickUtils.isPrimitive(brickJSON)) {
             return brickJSON;
         }
 
@@ -210,7 +210,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             // get all dynamic props
             const dynamicProps: any = {};
             exprFields.forEach(field => {
-                let x:string = brickJSON[field];
+                let x: string = brickJSON[field];
                 dynamicProps[field] = x.substr(1, x.length - 2);
             });
 
@@ -236,6 +236,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         this.copyBrickProperties(props, brickJSON);
         props.key = brickJSON.key; // add ID prop
 
+
+        if (props.style) {
+            props.style = BrickLayer.convertStyleToObject(props.style);
+        }
+
         if (specialBrick) {
             props.renderKids = this.renderKids;
         }
@@ -260,10 +265,58 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         }
 
         // create the element
+        console.log('applying props: ', JSON.stringify(props));
+        console.log('applying children: ', JSON.stringify(children));
         let element = React.createElement(elementCtor, props, children);
 
         // return it
         return element;
+    }
+
+    /**
+     * Convert a string based `style` attribute to an object
+     * that React expects.
+     * 
+     * @param styles 
+     */
+    static convertStyleToObject(styles: string): object {
+        console.log('styles type: ', typeof styles);
+
+        const styleObject: any = {};
+        if (!styles) {
+            return {};
+        }
+        const items: string[] = styles.split(';');
+        items.forEach(item => {
+            const params: string[] = item.split(':');
+            if (params.length == 2) {
+                let key: string = params[0];
+                let updatedKey = '';
+                // remove hyphen and convert next char to upper case
+                let convert:boolean = false;
+                for(let index:number = 0; index < key.length; index++) {
+                    let chr = key.charAt(index);
+                    if(chr === '-') {
+                        convert = true;
+                        continue;
+                    }
+
+                    if(convert) {
+                        chr = chr.toUpperCase();
+                        convert = false;
+                    }
+
+                    updatedKey += chr;
+                }
+
+                console.log('key ' + key + ' converted to ' + updatedKey);
+
+                styleObject[updatedKey] = params[1].trim();
+            }
+        });
+
+        console.log('style object generated as: ', styleObject);
+        return styleObject;
     }
 
     /**
@@ -288,6 +341,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * 
      */
     private copyBrickProperties(props: any, brickConfig: any, skipProps: string[] = []): void {
+        console.log('Processing properties for brick: ', brickConfig.brick);
+
         // find all keys inside configuration
         const keys: string[] = Object.keys(brickConfig) || [];
 
@@ -316,29 +371,39 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             const key: string = keys[index];
             const value = brickConfig[key];
 
+            if (!value) {
+                continue;
+            }
+
             if (key === 'brick') {
                 continue;
             }
 
+            console.log('    checking prop: ', key);
+
             // skip key if it is not needed
             if (skipProps.includes(key)) {
-                console.log('skipping expr key: ' + key + ' on brick: ' + brickConfig.brick)
+                console.log('    skipping expr key: ' + key + ' on brick: ' + brickConfig.brick)
                 continue;
             }
 
             // is this a form key
             const isFormKey: boolean = formElementConfig && !!formElementConfig.handlers[key];
+            console.log('    key is not a form key: ', key);
 
             // is the value a function back in the JSON itself
             // mount it directly, nothing to massage here
             if (!isFormKey && typeof value !== 'string') {
+                console.log('    value is non-string, assigning directly: ', key);
                 props[key] = value;
                 continue;
             }
 
             // does prop start with `on` - it must be a handler
             if (!key.startsWith('on')) {
+                console.log('    key is not a handler key: ', key);
                 props[key] = this.evaluateExpression(value);
+                continue;
             }
 
             // the current key represents a `on` based function handler
@@ -408,6 +473,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // check if the value is an expression
         // an expression starts with '{' and ends with '}'
         if (!this.isPropAnExpression(value)) {
+            console.log('    value is not an expression, returning value: ', value);
             return value;
         }
 

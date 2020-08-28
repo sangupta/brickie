@@ -81,7 +81,10 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
 
             // convert it to the AST expression
             const nodeAndIdentifiers: any = this.props.store.parseExpression(dynamicProp);
+
             const node: any = nodeAndIdentifiers.node;
+            console.log('ast: ', node);
+            
             const identifiers: string[] = nodeAndIdentifiers.identifiers;
 
             // find all identifiers that all these ASTs depend upon
@@ -131,11 +134,20 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
                 return;
             }
 
+            // if('className' === key) {
+            //     return;
+            // }
+
             evaluated[key] = this.props.store.evaluateNode(this.ast[key]);
         });
 
         // second, merge static and dynamic properties
         const props = { ...this.props.staticProps, ...evaluated };
+
+        // if(keys.includes('className')) {
+        //     this.props.store.setValue('props', props);
+            
+        // }
 
         // check if children is part of evaluated properties or not
         let children;
