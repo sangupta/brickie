@@ -265,8 +265,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         }
 
         // create the element
-        console.log('applying props: ', JSON.stringify(props));
-        console.log('applying children: ', JSON.stringify(children));
+        console.warn('applying props: ', JSON.stringify(props));
+        console.warn('applying children: ', JSON.stringify(children));
         let element = React.createElement(elementCtor, props, children);
 
         // return it
@@ -616,6 +616,9 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         if (!json.key) {
             json.key = 'brickie-field-' + (++this.idCounter);
         }
+
+        // copy it as a data attribute
+        json['data-brickie-key'] = json.key;
 
         // check other attributes of this brick
         const fields: string[] = this.findPropsThatAreExpressions(json);
