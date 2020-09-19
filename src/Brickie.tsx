@@ -6,6 +6,13 @@ import BrickConfig from './BrickConfig';
 import VarStore from 'varstore';
 import HandlerConfig from './HandlerConfig';
 
+interface LayoutOptions {
+
+    bricks: any;
+
+    keyPrefix?: string;
+}
+
 /**
  * The central class for Brickie framework.
  * External applications should only interact
@@ -28,7 +35,8 @@ export default class Brickie {
      * new instance of `Brickie` and lays out the UI, and then
      * return the generated instance.
      * 
-     * @param json the JSON object to render
+     * @param options Layout options which also include the JSON 
+     * object to render
      * 
      * @param mountElement the `HTMLElement` to which the layout
      * shall be rendered
@@ -41,21 +49,25 @@ export default class Brickie {
      * @param callbackHandler the callback handler to be used when
      * actions are invoked on components
      */
-    static lay(json: object, mountElement: HTMLElement, store: VarStore, callbackHandler?: Function | object): Brickie {
+    static lay(options: LayoutOptions, mountElement: HTMLElement, store: VarStore, callbackHandler?: Function | object): Brickie {
         const brickie: Brickie = new Brickie();
-        brickie.lay(json, mountElement, store, callbackHandler);
+        brickie.lay(options, mountElement, store, callbackHandler);
         return brickie;
     }
 
     /**
      * Lay out the UI using `BrickLayer`.
      * 
-     * @param json 
+     * @param options 
      * @param mountElement 
      */
-    lay(json: object, mountElement: HTMLElement, store?: VarStore, callbackHandler?: Function | object): void {
-        if (!json) {
-            throw new Error('JSON layout to render is a must.');
+    lay(options: LayoutOptions, mountElement: HTMLElement, store?: VarStore, callbackHandler?: Function | object): void {
+        if (!options) {
+            throw new Error('Layout options are a must to render.');
+        }
+
+        if (!options.bricks) {
+            throw new Error('Bricks are a must to render.');
         }
 
         if (!mountElement) {
@@ -65,8 +77,9 @@ export default class Brickie {
         this.domElement = mountElement;
 
         const brickLayer = <BrickLayer
-            layout={json}
+            layout={options.bricks}
             callbackHandler={callbackHandler}
+            keyPrefix={options.keyPrefix}
             store={store} />;
 
         this.reactElement = ReactDOM.render(brickLayer, mountElement);

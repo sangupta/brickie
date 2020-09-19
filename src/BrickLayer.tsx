@@ -26,6 +26,12 @@ interface BrickLayerProps {
     layout: object;
 
     /**
+     * Use this prefix instead of the default one when
+     * generating unique keys for each brick
+     */
+    keyPrefix?: string;
+
+    /**
      * State to be used to render
      */
     store: VarStore;
@@ -293,15 +299,15 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 let key: string = params[0].trim();
                 let updatedKey = '';
                 // remove hyphen and convert next char to upper case
-                let convert:boolean = false;
-                for(let index:number = 0; index < key.length; index++) {
+                let convert: boolean = false;
+                for (let index: number = 0; index < key.length; index++) {
                     let chr = key.charAt(index);
-                    if(chr === '-') {
+                    if (chr === '-') {
                         convert = true;
                         continue;
                     }
 
-                    if(convert) {
+                    if (convert) {
                         chr = chr.toUpperCase();
                         convert = false;
                     }
@@ -614,7 +620,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // add the key field if not already present
         // this will allow faster reconcilation by react
         if (!json.key) {
-            json.key = 'brickie-field-' + (++this.idCounter);
+            json.key = (this.props.keyPrefix || 'brickie-field') + '-' + (++this.idCounter);
+            console.log('key: ', json.key);
         }
 
         // copy it as a data attribute
