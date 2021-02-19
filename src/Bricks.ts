@@ -2,7 +2,7 @@ import ForLoop from "./components/ForLoop";
 import IfClause from "./components/IfClause";
 import BrickConfig from './BrickConfig';
 import FormConfig, { HandlerMap } from "./FormConfig";
-import HandlerConfig from "HandlerConfig";
+import HandlerConfig from "./HandlerConfig";
 
 export type BrickMap = { [key: string]: BrickConfig };
 

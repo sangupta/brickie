@@ -3,7 +3,7 @@ import Bricks from './Bricks';
 import { SPECIAL_BRICKS } from './Bricks';
 
 import BrickUtils from './BrickUtils';
-import BrickConfig from 'BrickConfig';
+import BrickConfig from './BrickConfig';
 
 import VarStore from 'varstore';
 import FormConfig from './FormConfig';
@@ -271,8 +271,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         }
 
         // create the element
-        console.warn('applying props: ', JSON.stringify(props));
-        console.warn('applying children: ', JSON.stringify(children));
+        // console.warn('applying props: ', JSON.stringify(props));
+        // console.warn('applying children: ', JSON.stringify(children));
         let element = React.createElement(elementCtor, props, children);
 
         // return it
