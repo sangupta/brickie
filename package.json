@@ -16,11 +16,12 @@
         "url": "https://sangupta.com"
     },
     "devDependencies": {
-        "typescript": "^3.8.2",
-        "react": "^16.12.0",
-        "react-dom": "^16.12.0",
-        "@types/react": "^16.9.22",
-        "@types/react-dom": "^16.9.5",
+        "typescript": "^4.2.2",
+        "react": "^16.13.1",
+        "react-dom": "^16.13.1",
+        "@types/react": "^16.9.49",
+        "@types/react-dom": "^16.9.8",
+        "axios": "^0.21.1",
         "varstore": "file:/Users/sangupta/git/reborn/varstore"
     }
 }
