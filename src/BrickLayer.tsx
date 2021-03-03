@@ -10,7 +10,7 @@ import FormConfig from './FormConfig';
 
 import { getExistsWithValue } from 'varstore/src/VarStoreUtils';
 import HandlerConfig from './HandlerConfig';
-import ProxyBrick from './ProxyBrick';
+import ProxyBrick from './components/ProxyBrick';
 
 const BRICK_WITH_EXPR_IDENTIFIER = "__expr";
 
@@ -115,22 +115,22 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         return this.renderBrick(layout);
     }
 
-    /**
-     * Get brick component corresponding to the given name of the
-     * brick.
-     * 
-     * @param brickName the brick name to find the component for
-     * 
-     * @returns a React component for the given brick name, or `null`
-     * if no matching component is found
-     */
-    getBrick(brickName: string): BrickConfig {
-        if (!brickName) {
-            return null;
-        }
+    // /**
+    //  * Get brick component corresponding to the given name of the
+    //  * brick.
+    //  * 
+    //  * @param brickName the brick name to find the component for
+    //  * 
+    //  * @returns a React component for the given brick name, or `null`
+    //  * if no matching component is found
+    //  */
+    // getBrick(brickName: string): BrickConfig {
+    //     if (!brickName) {
+    //         return null;
+    //     }
 
-        return Bricks.brickMappings[brickName];
-    }
+    //     return Bricks.brickMappings[brickName];
+    // }
 
     /**
      * Render the internal `Brickie` components for components
@@ -182,12 +182,14 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // check for special cases of bricks
         const lowerBrickName: string = brickName.toLowerCase();
         let brickConfig: BrickConfig = SPECIAL_BRICKS[lowerBrickName];
-        let specialBrick: boolean = false;
+        
+        // check for special brick case
+        const specialBrick: boolean = brickConfig ? true : false;
         if (brickConfig) {
-            specialBrick = true;
+            console.info('found special brick as: ' + lowerBrickName);
         } else {
             // this is a normal brick (React component) - handle it normally
-            brickConfig = this.getBrick(brickName);
+            brickConfig = Bricks.getBrick(brickName);
         }
 
         // check if the brick is registered or not
@@ -200,6 +202,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             // this may be a standard HTML tag
             // let's just wire it up and return
             elementCtor = brickJSON.brick;
+        }
+
+        if(!elementCtor) {
+            console.error('No constructor to construct element with JSON: ', brickJSON);
+            return null;
         }
 
         // check if this brick has expressions
@@ -224,13 +231,17 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
             /// build props
             const proxyProps: any = {};
+            if(specialBrick) {
+                proxyProps.renderKids = this.renderKids;
+                staticProps.renderKids = this.renderKids;
+            }
+
             proxyProps.key = brickJSON.key + '-proxy';
             proxyProps.element = elementCtor;
             proxyProps.staticProps = staticProps;
             proxyProps.dynamicProps = dynamicProps;
             proxyProps.store = this.props.store;
             proxyProps.childBricks = brickJSON.children;
-            proxyProps.renderKids = this.renderKids;
 
             return React.createElement(ProxyBrick, proxyProps, null);
         }
@@ -273,7 +284,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // create the element
         // console.warn('applying props: ', JSON.stringify(props));
         // console.warn('applying children: ', JSON.stringify(children));
-        let element = React.createElement(elementCtor, props, children);
+        console.log('creating react element for: ', elementCtor);
+        const element = React.createElement(elementCtor, props, children);
 
         // return it
         return element;
@@ -374,40 +386,50 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // iterate over all props in config
         for (let index = 0; index < keys.length; index++) {
             // read both prop and its value
-            const key: string = keys[index];
-            const value = brickConfig[key];
+            // also change any 'class' prop to 'className'
+            // as that is what React understands
+            const originalKey: string = keys[index];
+            const key: string = originalKey !== 'class' ? originalKey : 'className';
+            const value = brickConfig[originalKey];
 
-            if (!value) {
-                continue;
-            }
-
+            // we do not copy the brick prop
             if (key === 'brick') {
                 continue;
             }
 
-            console.log('    checking prop: ', key);
+            if(key === 'className') {
+                console.log('        prop is classname');
+            }
+
+            // no need to copy if there is no value for prop
+            if (!value) {
+                continue;
+            }
+
+            // log a debug message
+            console.debug('    checking prop: ', key);
 
             // skip key if it is not needed
             if (skipProps.includes(key)) {
-                console.log('    skipping expr key: ' + key + ' on brick: ' + brickConfig.brick)
+                console.debug('    skipping expr key: ' + key + ' on brick: ' + brickConfig.brick)
                 continue;
             }
 
             // is this a form key
             const isFormKey: boolean = formElementConfig && !!formElementConfig.handlers[key];
-            console.log('    key is not a form key: ', key);
+            console.debug('    key is not a form key: ', key);
 
             // is the value a function back in the JSON itself
             // mount it directly, nothing to massage here
             if (!isFormKey && typeof value !== 'string') {
-                console.log('    value is non-string, assigning directly: ', key);
+                console.debug('    value is non-string, assigning directly: ', key);
                 props[key] = value;
                 continue;
             }
 
             // does prop start with `on` - it must be a handler
             if (!key.startsWith('on')) {
-                console.log('    key is not a handler key: ', key);
+                console.debug('    key is not a handler key: ', key);
                 props[key] = this.evaluateExpression(value);
                 continue;
             }

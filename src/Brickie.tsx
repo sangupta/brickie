@@ -112,6 +112,10 @@ export default class Brickie {
      * @param component 
      */
     static registerBrick(name: string, component: Function, childAttributes?: string[]): void {
+        if(!component) {
+            throw new Error('Cannot register a brick without a component function with name: ' + name);
+        }
+        
         Bricks.registerBrick(name, new BrickConfig(component, childAttributes));
     }
 
