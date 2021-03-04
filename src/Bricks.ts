@@ -2,11 +2,13 @@ import BrickConfig from './BrickConfig';
 import FormConfig, { HandlerMap } from "./FormConfig";
 import HandlerConfig from "./HandlerConfig";
 
+import Brickie from './Brickie';
+
 // special bricks
 import ForLoop from "./components/ForLoop";
 import IfClause from "./components/IfClause";
 import Http from './components/Http';
-import Brickie from './Brickie';
+import Fit from './components/Fit';
 
 // export types
 export type BrickMap = { [key: string]: BrickConfig };
@@ -16,7 +18,8 @@ export type FormMap = { [key: string]: FormConfig };
 export const SPECIAL_BRICKS: BrickMap = {
     'foreach': new BrickConfig(ForLoop, ['template']),
     'if': new BrickConfig(IfClause, ['then', 'else']),
-    'http': new BrickConfig(Http, ['load', 'success', 'error'])
+    'http': new BrickConfig(Http, ['load', 'success', 'error']),
+    'fit': new BrickConfig(Fit, [])
 }
 
 /**
