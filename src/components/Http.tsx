@@ -35,24 +35,19 @@ export default class Http extends React.Component<any, any> {
     }
 
     render() {
-        if(!this.props.renderKids) {
-            console.error('did not receive renderKids method');
-            return null;
-        }
-        
         const { loading, response, error } = this.state;
         if (loading) {
-            const context = {};
-            return this.props.renderKids(this.props.load, context);
-
-            return null;
+            return this.props.renderKids(this.props.load, this.props.store);
         }
 
         if (error) {
-            return this.props.renderKids(this.props.error, { error: error });
+            return this.props.renderKids(this.props.error, this.props.store, { error: error });
         }
 
-        return this.props.renderKids(this.props.success, { response: response });
+        const object = { status: response.status, statusText: response.statusText, config: response.config, data: response.data };
+        const context = {};
+        context[this.props.as] = object;
+        return this.props.renderKids(this.props.success, this.props.store, context);
     }
 
 }

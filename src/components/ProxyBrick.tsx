@@ -1,5 +1,6 @@
 import * as React from 'react';
 import VarStore from 'varstore';
+import Brickie from './../Brickie';
 
 export type AstEntry = { [key: string]: any };
 
@@ -36,7 +37,7 @@ interface ProxyBrickProps {
     /**
      * This comes from Brickie renderer
      */
-    renderKids: (kids: [], context?: object) => any;
+    renderKids: (kids: [], store: VarStore, context?: object) => any;
 }
 
 export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
@@ -63,13 +64,13 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
 
         // find all dynamic property names
         if (!this.props.dynamicProps) {
-            console.error('No dynamic props supplied to proxy');
+            Brickie.error('No dynamic props supplied to proxy');
             return;
         }
 
         const dynamicKeys: string[] = Object.keys(this.props.dynamicProps);
         if (!dynamicKeys) {
-            console.error('No dynamic keys bound to this component');
+            Brickie.error('No dynamic keys bound to this component');
             return;
         }
 
@@ -83,8 +84,8 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
             const nodeAndIdentifiers: any = this.props.store.parseExpression(dynamicProp);
 
             const node: any = nodeAndIdentifiers.node;
-            console.log('ast: ', node);
-            
+            Brickie.debug('ast: ', node);
+
             const identifiers: string[] = nodeAndIdentifiers.identifiers;
 
             // find all identifiers that all these ASTs depend upon
@@ -146,7 +147,7 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
 
         // if(keys.includes('className')) {
         //     this.props.store.setValue('props', props);
-            
+
         // }
 
         // check if children is part of evaluated properties or not
@@ -154,7 +155,7 @@ export default class ProxyBrick extends React.Component<ProxyBrickProps, {}> {
         if (this.ast.children) {
             children = this.props.store.evaluateNode(this.ast.children);
         } else {
-            children = this.props.renderKids(this.props.childBricks);
+            children = this.props.renderKids(this.props.childBricks, this.props.store);
         }
 
         // create the element

@@ -11,6 +11,7 @@ import FormConfig from './FormConfig';
 import { getExistsWithValue } from 'varstore/src/VarStoreUtils';
 import HandlerConfig from './HandlerConfig';
 import ProxyBrick from './components/ProxyBrick';
+import Brickie from './Brickie';
 
 const BRICK_WITH_EXPR_IDENTIFIER = "__expr";
 
@@ -71,11 +72,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         // massage the JSON to be used
         if (props.layout) {
-            console.log('requesting addition of key fields');
+            Brickie.debug('requesting addition of key fields');
 
             this.addKeyFields(props.layout);
 
-            console.log('layout generated: ', props.layout);
+            Brickie.debug('layout generated: ', props.layout);
         }
     }
 
@@ -89,8 +90,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             return null;
         }
 
-        const rendered = this.renderLayout(layout);
-        console.log('completed rendering...');
+        const rendered = this.renderLayout(layout, this.props.store);
+        Brickie.debug('completed rendering...');
         return rendered;
     }
 
@@ -99,11 +100,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * 
      * @param layout 
      */
-    renderLayout = (layout: any): any => {
+    renderLayout = (layout: any, store: VarStore): any => {
         if (Array.isArray(layout)) {
             let result = [];
             for (let index = 0; index < layout.length; index++) {
-                let rendered = this.renderBrick(layout[index]);
+                let rendered = this.renderBrick(layout[index], store);
                 if (rendered) {
                     result.push(rendered);
                 }
@@ -112,7 +113,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             return result;
         }
 
-        return this.renderBrick(layout);
+        return this.renderBrick(layout, store);
     }
 
     // /**
@@ -145,16 +146,16 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * when rendering. The context is pushed to `varstore` and then
      * the kids are rendered.
      */
-    private renderKids = (kids: [], context: object = null): any => {
-        // console.log('render kids');
-        if (context) {
-            this.props.store.pushContext(context);
-        }
+    private renderKids = (kids: [], store:VarStore, context: VarStore = null): any => {
+        // add context to current store
+        const myStore = !!context ? store.fork('forked', context) : store;
 
-        const result = this.renderLayout(kids);
-        if (context) {
-            this.props.store.popContext();
-        }
+        const result = this.renderLayout(kids, myStore);
+
+        // remove context from store
+        // if (context) {
+        //     store.popContext();
+        // }
 
         return result;
     }
@@ -164,7 +165,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * 
      * @param brickJSON the brick definition to render (as JSON)
      */
-    renderBrick = (brickJSON: any): any => {
+    renderBrick = (brickJSON: any, store: VarStore): any => {
         if (!brickJSON) {
             return null;
         }
@@ -175,18 +176,18 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         const brickName: string = brickJSON.brick;
         if (!brickName) {
-            console.log('Brick name has not been specified');
+            Brickie.debug('Brick name has not been specified');
             return null;
         }
 
         // check for special cases of bricks
         const lowerBrickName: string = brickName.toLowerCase();
         let brickConfig: BrickConfig = SPECIAL_BRICKS[lowerBrickName];
-        
+
         // check for special brick case
         const specialBrick: boolean = brickConfig ? true : false;
         if (brickConfig) {
-            console.info('found special brick as: ' + lowerBrickName);
+            Brickie.info('found special brick as: ' + lowerBrickName);
         } else {
             // this is a normal brick (React component) - handle it normally
             brickConfig = Bricks.getBrick(brickName);
@@ -197,15 +198,18 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         if (brickConfig) {
             elementCtor = brickConfig.brickCtor as any;
         } else {
-            console.warn('No brick found for given name: ', brickJSON.brick);
+            const chr = (brickJSON.brick as string).charAt(0);
+            if(chr !== chr.toLowerCase()) {
+                Brickie.warn('No brick found for given name: ', brickJSON.brick);
+            }
 
             // this may be a standard HTML tag
             // let's just wire it up and return
             elementCtor = brickJSON.brick;
         }
 
-        if(!elementCtor) {
-            console.error('No constructor to construct element with JSON: ', brickJSON);
+        if (!elementCtor) {
+            Brickie.error('No constructor to construct element with JSON: ', brickJSON);
             return null;
         }
 
@@ -218,7 +222,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             // let's proxy it
             // get all static props
             const staticProps: any = {};
-            this.copyBrickProperties(staticProps, brickJSON, exprFields.concat(BRICK_WITH_EXPR_IDENTIFIER));
+            this.copyBrickProperties(staticProps, brickJSON, store, exprFields.concat(BRICK_WITH_EXPR_IDENTIFIER));
 
             // get all dynamic props
             const dynamicProps: any = {};
@@ -227,13 +231,14 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 dynamicProps[field] = x.substr(1, x.length - 2);
             });
 
-            console.log('proxy json: ', brickJSON);
+            Brickie.debug('proxy json: ', brickJSON);
 
             /// build props
             const proxyProps: any = {};
-            if(specialBrick) {
+            if (specialBrick) {
                 proxyProps.renderKids = this.renderKids;
                 staticProps.renderKids = this.renderKids;
+                staticProps.store = store;
             }
 
             proxyProps.key = brickJSON.key + '-proxy';
@@ -250,7 +255,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         const props: any = {};
 
         // copy brick properties.
-        this.copyBrickProperties(props, brickJSON);
+        this.copyBrickProperties(props, brickJSON, store);
         props.key = brickJSON.key; // add ID prop
 
 
@@ -260,6 +265,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
 
         if (specialBrick) {
             props.renderKids = this.renderKids;
+            props.store = store;
         }
 
         // remove children - as they are passed via React.createElement
@@ -272,19 +278,19 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         if (childBricks) {
             if (BrickUtils.isPrimitive(childBricks)) {
                 if (typeof childBricks === 'string') {
-                    children = this.evaluateExpression(childBricks);
+                    children = this.evaluateExpression(childBricks, store);
                 } else {
                     children = childBricks;
                 }
             } else {
-                children = this.renderLayout(brickJSON.children);
+                children = this.renderLayout(brickJSON.children, store);
             }
         }
 
         // create the element
-        // console.warn('applying props: ', JSON.stringify(props));
-        // console.warn('applying children: ', JSON.stringify(children));
-        console.log('creating react element for: ', elementCtor);
+        // Brickie.warn('applying props: ', JSON.stringify(props));
+        // Brickie.warn('applying children: ', JSON.stringify(children));
+        Brickie.debug('creating react element for: ', elementCtor);
         const element = React.createElement(elementCtor, props, children);
 
         // return it
@@ -298,7 +304,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * @param styles 
      */
     static convertStyleToObject(styles: string): object {
-        console.log('styles type: ', typeof styles);
+        Brickie.debug('styles type: ', typeof styles);
 
         const styleObject: any = {};
         if (!styles) {
@@ -327,13 +333,13 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                     updatedKey += chr;
                 }
 
-                console.log('key ' + key + ' converted to ' + updatedKey);
+                Brickie.debug('key ' + key + ' converted to ' + updatedKey);
 
                 styleObject[updatedKey] = params[1].trim();
             }
         });
 
-        console.log('style object generated as: ', styleObject);
+        Brickie.debug('style object generated as: ', styleObject);
         return styleObject;
     }
 
@@ -358,8 +364,8 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * These properties will be copied in a different way.
      * 
      */
-    private copyBrickProperties(props: any, brickConfig: any, skipProps: string[] = []): void {
-        console.log('Processing properties for brick: ', brickConfig.brick);
+    private copyBrickProperties(props: any, brickConfig: any, store:VarStore, skipProps: string[] = []): void {
+        Brickie.debug('Processing properties for brick: ', brickConfig.brick);
 
         // find all keys inside configuration
         const keys: string[] = Object.keys(brickConfig) || [];
@@ -397,40 +403,41 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 continue;
             }
 
-            if(key === 'className') {
-                console.log('        prop is classname');
-            }
-
             // no need to copy if there is no value for prop
             if (!value) {
                 continue;
             }
 
             // log a debug message
-            console.debug('    checking prop: ', key);
+            Brickie.debug('    checking prop: ', key);
 
             // skip key if it is not needed
             if (skipProps.includes(key)) {
-                console.debug('    skipping expr key: ' + key + ' on brick: ' + brickConfig.brick)
+                Brickie.debug('    skipping expr key: ' + key + ' on brick: ' + brickConfig.brick)
                 continue;
             }
 
             // is this a form key
             const isFormKey: boolean = formElementConfig && !!formElementConfig.handlers[key];
-            console.debug('    key is not a form key: ', key);
+            Brickie.debug('    key is not a form key: ', key);
 
             // is the value a function back in the JSON itself
             // mount it directly, nothing to massage here
             if (!isFormKey && typeof value !== 'string') {
-                console.debug('    value is non-string, assigning directly: ', key);
+                Brickie.debug('    value is non-string, assigning directly: ', key);
                 props[key] = value;
                 continue;
             }
 
             // does prop start with `on` - it must be a handler
             if (!key.startsWith('on')) {
-                console.debug('    key is not a handler key: ', key);
-                props[key] = this.evaluateExpression(value);
+                Brickie.debug('    key is not a handler key: ', key);
+                try {
+                    props[key] = this.evaluateExpression(value, store);
+                } catch(e) {
+                    Brickie.warn('Key throws error: ', value, store);
+                }
+
                 continue;
             }
 
@@ -466,12 +473,12 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 if (name) {
                     // create a handler to wire value to varstore
                     updator = (...args) => {
-                        // console.log('brickie: calling set value for name: ' + name);
+                        // Brickie.debug('brickie: calling set value for name: ' + name);
                         this.props.store.setValue(name, this.getFormElementValue(key, args, formElementConfig));
 
                         // call any handler attached by client
                         if (handler) {
-                            console.log('brickie: calling original handler');
+                            Brickie.debug('brickie: calling original handler');
                             handler(...args);
                         }
                     }
@@ -493,7 +500,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
      * 
      * @param value 
      */
-    evaluateExpression(value: string): any {
+    evaluateExpression(value: string, store: VarStore): any {
         if (!value || value.trim().length === 0) {
             return value;
         }
@@ -501,12 +508,12 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // check if the value is an expression
         // an expression starts with '{' and ends with '}'
         if (!this.isPropAnExpression(value)) {
-            console.log('    value is not an expression, returning value: ', value);
+            Brickie.debug('    value is not an expression, returning value: ', value);
             return value;
         }
 
         const expression: string = value.substring(1, value.length - 1);
-        return this.props.store.evaluate(expression);
+        return store.evaluate(expression);
     }
 
     /**
@@ -643,7 +650,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         // this will allow faster reconcilation by react
         if (!json.key) {
             json.key = (this.props.keyPrefix || 'brickie-field') + '-' + (++this.idCounter);
-            console.log('key: ', json.key);
+            Brickie.debug('key: ', json.key);
         }
 
         // copy it as a data attribute

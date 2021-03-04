@@ -6,6 +6,7 @@ import HandlerConfig from "./HandlerConfig";
 import ForLoop from "./components/ForLoop";
 import IfClause from "./components/IfClause";
 import Http from './components/Http';
+import Brickie from './Brickie';
 
 // export types
 export type BrickMap = { [key: string]: BrickConfig };
@@ -25,9 +26,9 @@ export const SPECIAL_BRICKS: BrickMap = {
  */
 export default class Bricks {
 
-    private static brickMappings: BrickMap = {};
+    static brickMappings: BrickMap = {};
 
-    private static formMappings: FormMap = {};
+    static formMappings: FormMap = {};
 
     static formElementMappings: FormMap = {};
 
@@ -129,7 +130,7 @@ export default class Bricks {
             return null;
         }
 
-        console.log('current mappings: ', Bricks.brickMappings);
+        Brickie.debug('current mappings: ', Bricks.brickMappings);
         return Bricks.brickMappings[name];
     }
 

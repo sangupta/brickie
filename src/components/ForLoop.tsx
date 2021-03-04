@@ -1,4 +1,5 @@
 import * as React from 'react';
+import VarStore from 'varstore';
 
 interface ForLoopProps {
     /**
@@ -20,7 +21,9 @@ interface ForLoopProps {
     /**
      * This comes from Brickie renderer
      */
-    renderKids: (kids: [], context?: object) => any;
+    renderKids: (kids: [], store: VarStore, context?: object) => any;
+
+    store: VarStore;
 }
 
 export default class ForLoop extends React.Component<ForLoopProps, {}> {
@@ -35,7 +38,7 @@ export default class ForLoop extends React.Component<ForLoopProps, {}> {
             return null;
         }
 
-        if(!template) {
+        if (!template) {
             return null;
         }
 
@@ -45,8 +48,8 @@ export default class ForLoop extends React.Component<ForLoopProps, {}> {
             const item = items[index];
             const context = {};
             context[this.props.as] = item;
-            let rendered = this.props.renderKids(template, context);
-            if(rendered) {
+            let rendered = this.props.renderKids(template, this.props.store, context);
+            if (rendered) {
                 result.push(rendered);
             }
         }

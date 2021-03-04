@@ -20,6 +20,8 @@ interface LayoutOptions {
  */
 export default class Brickie {
 
+    private static DEBUG_MODE: boolean = false;
+
     /**
      * The react element that is currently rendered
      */
@@ -112,10 +114,10 @@ export default class Brickie {
      * @param component 
      */
     static registerBrick(name: string, component: Function, childAttributes?: string[]): void {
-        if(!component) {
+        if (!component) {
             throw new Error('Cannot register a brick without a component function with name: ' + name);
         }
-        
+
         Bricks.registerBrick(name, new BrickConfig(component, childAttributes));
     }
 
@@ -222,4 +224,27 @@ export default class Brickie {
         Bricks.registerFormElement(name, handlers);
     }
 
+    static debug(...args) {
+        if(Brickie.DEBUG_MODE) {
+            console.log.apply(null, args);
+        }
+    }
+
+    static info(...args) {
+        if(Brickie.DEBUG_MODE) {
+            console.info.apply(null, args);
+        }
+    }
+
+    static warn(...args) {
+        console.warn.apply(null, args);
+    }
+
+    static error(...args) {
+        console.error.apply(null, args);
+    }
+
+    static setDebug(enabled: boolean) {
+        Brickie.DEBUG_MODE = enabled;
+    }
 }
