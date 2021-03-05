@@ -241,6 +241,11 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
                 staticProps.store = store;
             }
 
+            // copy the runtime store as this brick needs it
+            if('runtimeContext' in brickJSON) {
+                staticProps.runtimeContext = store;
+            }
+
             proxyProps.key = brickJSON.key + '-proxy';
             proxyProps.element = elementCtor;
             proxyProps.staticProps = staticProps;
@@ -258,7 +263,13 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
         this.copyBrickProperties(props, brickJSON, store);
         props.key = brickJSON.key; // add ID prop
 
+        // copy the runtime store as this brick needs it
+        if('runtimeContext' in brickJSON) {
+            props.runtimeContext = store;
+        }
 
+        // check if a style property was copied to props
+        // after evaluation
         if (props.style) {
             props.style = BrickLayer.convertStyleToObject(props.style);
         }
