@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import BrickLayer from './BrickLayer';
-import Bricks from './Bricks';
+import Bricks, {SPECIAL_BRICKS} from './Bricks';
 import BrickConfig from './BrickConfig';
 import VarStore from 'varstore';
 import HandlerConfig from './HandlerConfig';
@@ -222,6 +222,26 @@ export default class Brickie {
      */
     static registerFormElementWithHandler(name: string, handlers: HandlerConfig | HandlerConfig[] = []): void {
         Bricks.registerFormElement(name, handlers);
+    }
+
+    static registerSpecialBrick(name: string, component:Function, attributes:string[] = []):void {
+        if(!name) {
+            throw new Error('Special brick name cannot be null/empty');
+        }
+
+        if(!component) {
+            throw new Error('Special brick component cannot be null/undefined');
+        }
+
+        SPECIAL_BRICKS[name.toLowerCase()] = new BrickConfig(component, attributes);
+    }
+
+    static unregisterSpecialBrick(name: string): void {
+        if(!name) {
+            return;
+        }
+
+        delete SPECIAL_BRICKS[name.toLowerCase()];
     }
 
     static debug(...args) {
