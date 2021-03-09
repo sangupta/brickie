@@ -469,7 +469,7 @@ export default class BrickLayer extends React.Component<BrickLayerProps, {}> {
             let handler: Function;
             if (value && typeof value === 'string') {
                 // get our cached handler
-                handler = this.getHandler(value);
+                handler = this.getHandler(this.evaluateExpression(value, store));
             }
 
             // if needed, wire the store updator
